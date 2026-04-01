@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/app_theme.dart';
-import 'login_screen.dart' show _StyledField, _CircleSocialButton;
+import '../widgets/auth_widgets.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -173,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildFormFields() {
     return Column(
       children: [
-        _StyledField(
+        StyledField(
           controller: _nameController,
           label: 'Full Name',
           hint: 'Your name',
@@ -181,7 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
         ),
         const SizedBox(height: 16),
-        _StyledField(
+        StyledField(
           controller: _emailController,
           label: 'Email',
           hint: 'you@example.com',
@@ -190,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           validator: (v) => v == null || !v.contains('@') ? 'Enter a valid email' : null,
         ),
         const SizedBox(height: 16),
-        _StyledField(
+        StyledField(
           controller: _passwordController,
           label: 'Password',
           hint: '••••••••',
@@ -255,19 +255,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _CircleSocialButton(
+        CircleSocialButton(
           icon: const FaIcon(FontAwesomeIcons.google, size: 20, color: Color(0xFFDB4437)),
           label: 'Google',
           isLoading: _loadingProvider == 'google',
           onPressed: () => _handleSocialLogin('google'),
         ),
-        _CircleSocialButton(
+        CircleSocialButton(
           icon: const FaIcon(FontAwesomeIcons.facebook, size: 20, color: Color(0xFF1877F2)),
           label: 'Facebook',
           isLoading: _loadingProvider == 'facebook',
           onPressed: () => _handleSocialLogin('facebook'),
         ),
-        _CircleSocialButton(
+        CircleSocialButton(
           icon: const FaIcon(FontAwesomeIcons.apple, size: 22, color: Colors.black),
           label: 'Apple',
           isLoading: _loadingProvider == 'apple',

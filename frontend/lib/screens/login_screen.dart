@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/app_theme.dart';
+import '../widgets/auth_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -171,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildFormFields() {
     return Column(
       children: [
-        _StyledField(
+        StyledField(
           controller: _emailController,
           label: 'Email',
           hint: 'you@example.com',
@@ -180,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
           validator: (v) => v == null || !v.contains('@') ? 'Enter a valid email' : null,
         ),
         const SizedBox(height: 16),
-        _StyledField(
+        StyledField(
           controller: _passwordController,
           label: 'Password',
           hint: '••••••••',
@@ -245,19 +246,19 @@ class _LoginScreenState extends State<LoginScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _CircleSocialButton(
+        CircleSocialButton(
           icon: const FaIcon(FontAwesomeIcons.google, size: 20, color: Color(0xFFDB4437)),
           label: 'Google',
           isLoading: _loadingProvider == 'google',
           onPressed: () => _handleSocialLogin('google'),
         ),
-        _CircleSocialButton(
+        CircleSocialButton(
           icon: const FaIcon(FontAwesomeIcons.facebook, size: 20, color: Color(0xFF1877F2)),
           label: 'Facebook',
           isLoading: _loadingProvider == 'facebook',
           onPressed: () => _handleSocialLogin('facebook'),
         ),
-        _CircleSocialButton(
+        CircleSocialButton(
           icon: const FaIcon(FontAwesomeIcons.apple, size: 22, color: Colors.black),
           label: 'Apple',
           isLoading: _loadingProvider == 'apple',
@@ -287,133 +288,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _StyledField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final String hint;
-  final IconData icon;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final TextInputType? keyboardType;
-  final String? Function(String?)? validator;
-
-  const _StyledField({
-    required this.controller,
-    required this.label,
-    required this.hint,
-    required this.icon,
-    this.obscureText = false,
-    this.suffixIcon,
-    this.keyboardType,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF555555),
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          validator: validator,
-          style: const TextStyle(fontSize: 15),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade400),
-            prefixIcon: Icon(icon, color: Colors.grey.shade500, size: 20),
-            suffixIcon: suffixIcon,
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: AppTheme.error),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CircleSocialButton extends StatelessWidget {
-  final Widget icon;
-  final String label;
-  final VoidCallback onPressed;
-  final bool isLoading;
-
-  const _CircleSocialButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.isLoading = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isLoading ? null : onPressed,
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: isLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(18),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Center(child: icon),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
