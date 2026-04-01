@@ -26,7 +26,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
     if (auth.isAuthenticated) {
-      Navigator.pushReplacementNamed(context, '/home');
+      final destination = auth.isProfileComplete ? '/home' : '/complete-profile';
+      Navigator.pushReplacementNamed(context, destination);
     } else {
       Navigator.pushReplacementNamed(context, '/welcome');
     }

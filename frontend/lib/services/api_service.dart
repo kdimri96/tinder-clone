@@ -76,6 +76,22 @@ class ApiService {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> socialLogin({
+    required String provider,
+    required String token,
+    String? name,
+    String? email,
+  }) async {
+    final response = await _dio.post('/auth/social', data: {
+      'provider': provider,
+      'token': token,
+      if (name != null && name.isNotEmpty) 'name': name,
+      if (email != null && email.isNotEmpty) 'email': email,
+    });
+    await _saveTokens(response.data);
+    return response.data;
+  }
+
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,

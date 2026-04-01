@@ -12,6 +12,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/chat_screen.dart';
+import 'screens/complete_profile_screen.dart';
 import 'models/user_model.dart';
 import 'utils/app_theme.dart';
 
@@ -59,6 +60,8 @@ class TinderCloneApp extends StatelessWidget {
               return MaterialPageRoute(builder: (_) => const LoginScreen());
             case '/register':
               return MaterialPageRoute(builder: (_) => const RegisterScreen());
+            case '/complete-profile':
+              return MaterialPageRoute(builder: (_) => const CompleteProfileScreen());
             case '/home':
               return MaterialPageRoute(builder: (_) => const HomeScreen());
             case '/matches':
