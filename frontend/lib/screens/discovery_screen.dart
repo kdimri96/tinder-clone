@@ -178,21 +178,21 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           icon: Icons.close,
           color: AppTheme.error,
           size: 56,
-          onPressed: () => _controller.swipe(CardSwiperDirection.left),
+          onPressed: () => _controller.swipeLeft(),
         ),
         // Super Like
         _ActionButton(
           icon: Icons.star,
           color: AppTheme.superLike,
           size: 46,
-          onPressed: () => _controller.swipe(CardSwiperDirection.top),
+          onPressed: () => _controller.swipeTop(),
         ),
         // Like
         _ActionButton(
           icon: Icons.favorite,
           color: AppTheme.success,
           size: 56,
-          onPressed: () => _controller.swipe(CardSwiperDirection.right),
+          onPressed: () => _controller.swipeRight(),
         ),
       ],
     );
@@ -216,8 +216,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           ),
           const SizedBox(height: 24),
           OutlinedButton(
-            onPressed: () => context.read<DiscoveryProvider>().reset().then((_) =>
-              context.read<DiscoveryProvider>().loadUsers()),
+            onPressed: () async {
+              await context.read<DiscoveryProvider>().reset();
+              context.read<DiscoveryProvider>().loadUsers();
+            },
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(160, 46),
             ),

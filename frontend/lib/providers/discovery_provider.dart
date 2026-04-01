@@ -101,12 +101,13 @@ class DiscoveryProvider extends ChangeNotifier {
     _users.removeWhere((u) => u.id == userId);
   }
 
-  void reset() {
+  Future<void> reset() async {
     _users = [];
     _page = 1;
     _hasMore = true;
     _error = null;
     _matchedUser = null;
     notifyListeners();
+    return;
   }
 }
