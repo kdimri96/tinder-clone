@@ -57,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final api = context.read<ApiService>();
-      final updatedUser = await api.uploadPhoto(picked.path);
+      final updatedUser = await api.uploadPhoto(picked);
       context.read<AuthProvider>().updateUser(updatedUser);
     } catch (e) {
       if (mounted) {

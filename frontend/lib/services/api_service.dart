@@ -1,16 +1,50 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../models/match_model.dart';
 import '../models/message_model.dart';
 
 class ApiService {
-  static const String _baseUrl = 'http://10.0.2.2:3000/api'; // Android emulator
-  // For iOS simulator use: http://localhost:3000/api
-  // For physical device use your machine's IP: http://192.168.x.x:3000/api
+  static String get _baseUrl {
+    if (kIsWeb) return 'http://localhost:3000/api';
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:3000/api';
+    }
+    return 'http://localhost:3000/api';
+  }
 
   late final Dio _dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  // Web-safe token read/write/delete using SharedPreferences on web
+  Future<String?> _readKey(String key) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(key);
+    }
+    return _storage.read(key: key);
+  }
+
+  Future<void> _writeKey(String key, String value) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, value);
+    } else {
+      await _storage.write(key: key, value: value);
+    }
+  }
+
+  Future<void> _deleteKey(String key) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(key);
+    } else {
+      await _storage.delete(key: key);
+    }
+  }
 
   ApiService() {
     _dio = Dio(BaseOptions(
@@ -21,7 +55,7 @@ class ApiService {
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'access_token');
+        final token = await _readKey('access_token');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
@@ -31,7 +65,7 @@ class ApiService {
         if (error.response?.statusCode == 401) {
           final refreshed = await _refreshToken();
           if (refreshed) {
-            final token = await _storage.read(key: 'access_token');
+            final token = await _readKey('access_token');
             error.requestOptions.headers['Authorization'] = 'Bearer $token';
             final retryResponse = await _dio.fetch(error.requestOptions);
             return handler.resolve(retryResponse);
@@ -44,7 +78,7 @@ class ApiService {
 
   Future<bool> _refreshToken() async {
     try {
-      final refreshToken = await _storage.read(key: 'refresh_token');
+      final refreshToken = await _readKey('refresh_token');
       if (refreshToken == null) return false;
 
       final response = await Dio().post(
@@ -52,8 +86,8 @@ class ApiService {
         data: {'refreshToken': refreshToken},
       );
 
-      await _storage.write(key: 'access_token', value: response.data['token']);
-      await _storage.write(key: 'refresh_token', value: response.data['refreshToken']);
+      await _writeKey('access_token', response.data['token']);
+      await _writeKey('refresh_token', response.data['refreshToken']);
       return true;
     } catch (_) {
       await logout();
@@ -105,8 +139,8 @@ class ApiService {
   }
 
   Future<void> logout() async {
-    await _storage.delete(key: 'access_token');
-    await _storage.delete(key: 'refresh_token');
+    await _deleteKey('access_token');
+    await _deleteKey('refresh_token');
   }
 
   Future<UserModel> getMe() async {
@@ -116,10 +150,10 @@ class ApiService {
 
   Future<void> _saveTokens(Map<String, dynamic> data) async {
     if (data['token'] != null) {
-      await _storage.write(key: 'access_token', value: data['token']);
+      await _writeKey('access_token', data['token']);
     }
     if (data['refreshToken'] != null) {
-      await _storage.write(key: 'refresh_token', value: data['refreshToken']);
+      await _writeKey('refresh_token', data['refreshToken']);
     }
   }
 
@@ -134,9 +168,11 @@ class ApiService {
     return UserModel.fromJson(response.data['user']);
   }
 
-  Future<UserModel> uploadPhoto(String filePath) async {
+  // Accepts XFile (works on all platforms including web)
+  Future<UserModel> uploadPhoto(XFile file) async {
+    final bytes = await file.readAsBytes();
     final formData = FormData.fromMap({
-      'photo': await MultipartFile.fromFile(filePath),
+      'photo': MultipartFile.fromBytes(bytes, filename: file.name),
     });
     final response = await _dio.post('/profile/photo', data: formData);
     return UserModel.fromJson(response.data['user']);
@@ -166,7 +202,7 @@ class ApiService {
   // SWIPE
   Future<Map<String, dynamic>> swipe({
     required String targetId,
-    required String direction, // 'like', 'dislike', 'superlike'
+    required String direction,
   }) async {
     final response = await _dio.post('/swipe', data: {
       'targetId': targetId,
@@ -207,6 +243,6 @@ class ApiService {
   }
 
   Future<String?> getStoredToken() async {
-    return _storage.read(key: 'access_token');
+    return _readKey('access_token');
   }
 }

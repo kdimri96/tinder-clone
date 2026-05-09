@@ -51,7 +51,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     setState(() => _isSaving = true);
     try {
       final api = context.read<ApiService>();
-      final updatedUser = await api.uploadPhoto(picked.path);
+      final updatedUser = await api.uploadPhoto(picked);
       context.read<AuthProvider>().updateUser(updatedUser);
       setState(() => _uploadedPhotos.addAll(
         updatedUser.photos.where((p) => !_uploadedPhotos.contains(p)),

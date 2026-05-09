@@ -16,7 +16,8 @@ import 'screens/complete_profile_screen.dart';
 import 'models/user_model.dart';
 import 'utils/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const TinderCloneApp());
 }
 

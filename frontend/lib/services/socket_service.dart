@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/message_model.dart';
 import '../models/match_model.dart';
@@ -8,7 +9,17 @@ typedef TypingCallback = void Function(String userId, bool isTyping);
 typedef PresenceCallback = void Function(String userId, bool isOnline);
 
 class SocketService {
-  static const String _baseUrl = 'http://10.0.2.2:3000';
+  static String get _baseUrl {
+    // kIsWeb must be checked first — dart:io is not available on web.
+    if (kIsWeb) {
+      return 'http://localhost:3000';
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:3000'; // Android emulator loopback
+    }
+    return 'http://localhost:3000'; // iOS simulator & other platforms
+  }
+
   IO.Socket? _socket;
 
   final List<MessageCallback> _messageListeners = [];
@@ -22,7 +33,7 @@ class SocketService {
     _socket = IO.io(
       _baseUrl,
       IO.OptionBuilder()
-          .setTransports(['websocket'])
+          .setTransports(kIsWeb ? ['polling', 'websocket'] : ['websocket'])
           .setAuth({'token': token})
           .enableAutoConnect()
           .enableReconnection()

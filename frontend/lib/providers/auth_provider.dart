@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, ChangeNotifier;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -148,6 +148,11 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> loginWithApple() async {
+    if (kIsWeb) {
+      _error = 'Apple Sign-In is not supported on web';
+      notifyListeners();
+      return false;
+    }
     try {
       _error = null;
       final credential = await SignInWithApple.getAppleIDCredential(

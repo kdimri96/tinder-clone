@@ -19,6 +19,9 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Tinder Clone - Swipe right to like, left to pass.">
+
+  <!-- Google Sign-In: replace with your Web OAuth Client ID from console.cloud.google.com -->
+  <meta name="google-signin-client_id" content="YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com">
   <meta name="theme-color" content="#FF4458">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
@@ -44,6 +47,20 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <!-- Facebook SDK: replace YOUR_FACEBOOK_APP_ID from developers.facebook.com -->
+  <script>
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId: 'YOUR_FACEBOOK_APP_ID',
+        cookie: true,
+        xfbml: true,
+        version: 'v18.0'
+      });
+    };
+  </script>
+  <script async defer crossorigin="anonymous"
+    src="https://connect.facebook.net/en_US/sdk.js"></script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
