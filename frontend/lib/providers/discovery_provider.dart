@@ -1,6 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
+
+const int _dailyLikeLimit = 12;
+const String _prefLikeCount = 'daily_like_count';
+const String _prefLikeDate = 'daily_like_date';
 
 class DiscoveryProvider extends ChangeNotifier {
   final ApiService _api;
@@ -11,14 +16,48 @@ class DiscoveryProvider extends ChangeNotifier {
   int _page = 1;
   String? _error;
   UserModel? _matchedUser;
+  int _dailyLikesUsed = 0;
 
-  DiscoveryProvider(this._api);
+  DiscoveryProvider(this._api) {
+    _loadDailyLikeCount();
+  }
 
   List<UserModel> get users => _users;
   bool get isLoading => _isLoading;
   bool get hasMore => _hasMore;
   String? get error => _error;
   UserModel? get matchedUser => _matchedUser;
+  int get dailyLikesUsed => _dailyLikesUsed;
+  int get dailyLikesRemaining => (_dailyLikeLimit - _dailyLikesUsed).clamp(0, _dailyLikeLimit);
+  bool get hasLikesLeft => _dailyLikesUsed < _dailyLikeLimit;
+
+  Future<void> _loadDailyLikeCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = _todayString();
+    final savedDate = prefs.getString(_prefLikeDate) ?? '';
+    if (savedDate != today) {
+      // New day — reset count
+      await prefs.setInt(_prefLikeCount, 0);
+      await prefs.setString(_prefLikeDate, today);
+      _dailyLikesUsed = 0;
+    } else {
+      _dailyLikesUsed = prefs.getInt(_prefLikeCount) ?? 0;
+    }
+    notifyListeners();
+  }
+
+  Future<void> _incrementLikeCount() async {
+    _dailyLikesUsed++;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_prefLikeCount, _dailyLikesUsed);
+    await prefs.setString(_prefLikeDate, _todayString());
+    notifyListeners();
+  }
+
+  String _todayString() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
 
   Future<void> loadUsers({double? latitude, double? longitude}) async {
     if (_isLoading) return;
@@ -45,14 +84,20 @@ class DiscoveryProvider extends ChangeNotifier {
   }
 
   Future<bool> swipeRight(String targetId) async {
+    if (!hasLikesLeft) {
+      _error = 'You have used all $dailyLikeLimit likes for today. Come back tomorrow!';
+      notifyListeners();
+      return false;
+    }
     try {
       final result = await _api.swipe(targetId: targetId, direction: 'like');
+      await _incrementLikeCount();
       _removeUser(targetId);
       if (result['match'] != null) {
         _matchedUser = UserModel.fromJson(result['match']['users']
             .firstWhere((u) => u['_id'] == targetId, orElse: () => result['match']['users'][0]));
         notifyListeners();
-        return true; // it's a match!
+        return true;
       }
       notifyListeners();
       return false;
@@ -107,7 +152,7 @@ class DiscoveryProvider extends ChangeNotifier {
     _hasMore = true;
     _error = null;
     _matchedUser = null;
+    await _loadDailyLikeCount();
     notifyListeners();
-    return;
   }
 }

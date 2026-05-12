@@ -35,23 +35,47 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   }
 
   void _onSwipe(int index, int? oldIndex, CardSwiperDirection direction) {
-    final users = context.read<DiscoveryProvider>().users;
+    final provider = context.read<DiscoveryProvider>();
+    final users = provider.users;
     if (index >= users.length) return;
     final user = users[index];
 
     if (direction == CardSwiperDirection.right) {
+      if (!provider.hasLikesLeft) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('You\'ve used all 12 likes for today. Come back tomorrow!'),
+            backgroundColor: AppTheme.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        return;
+      }
       _handleLike(user);
     } else if (direction == CardSwiperDirection.left) {
-      context.read<DiscoveryProvider>().swipeLeft(user.id);
+      provider.swipeLeft(user.id);
     } else if (direction == CardSwiperDirection.top) {
       _handleSuperLike(user);
     }
   }
 
   Future<void> _handleLike(UserModel user) async {
-    final isMatch = await context.read<DiscoveryProvider>().swipeRight(user.id);
+    final provider = context.read<DiscoveryProvider>();
+    if (!provider.hasLikesLeft) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('You\'ve used all 12 likes for today. Come back tomorrow!'),
+          backgroundColor: AppTheme.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+    final isMatch = await provider.swipeRight(user.id);
     if (isMatch && mounted) {
-      final matchedUser = context.read<DiscoveryProvider>().matchedUser;
+      final matchedUser = provider.matchedUser;
       if (matchedUser != null) {
         setState(() {
           _matchedUser = matchedUser;
@@ -96,6 +120,33 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               ],
             ),
             actions: [
+              Consumer<DiscoveryProvider>(
+                builder: (context, provider, _) {
+                  final remaining = provider.dailyLikesRemaining;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Chip(
+                      avatar: Icon(
+                        Icons.favorite,
+                        size: 14,
+                        color: remaining > 0 ? AppTheme.primary : Colors.grey,
+                      ),
+                      label: Text(
+                        '$remaining',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: remaining > 0 ? AppTheme.primary : Colors.grey,
+                        ),
+                      ),
+                      backgroundColor: remaining > 0
+                          ? AppTheme.primary.withOpacity(0.1)
+                          : Colors.grey.shade200,
+                      side: BorderSide.none,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.tune),
                 onPressed: () => Navigator.pushNamed(context, '/settings'),
@@ -170,31 +221,44 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        // Dislike
-        _ActionButton(
-          icon: Icons.close,
-          color: AppTheme.error,
-          size: 56,
-          onPressed: () => _controller.swipeLeft(),
-        ),
-        // Super Like
-        _ActionButton(
-          icon: Icons.star,
-          color: AppTheme.superLike,
-          size: 46,
-          onPressed: () => _controller.swipeTop(),
-        ),
-        // Like
-        _ActionButton(
-          icon: Icons.favorite,
-          color: AppTheme.success,
-          size: 56,
-          onPressed: () => _controller.swipeRight(),
-        ),
-      ],
+    return Consumer<DiscoveryProvider>(
+      builder: (context, provider, _) {
+        final canLike = provider.hasLikesLeft;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _ActionButton(
+              icon: Icons.close,
+              color: AppTheme.error,
+              size: 56,
+              onPressed: () => _controller.swipeLeft(),
+            ),
+            _ActionButton(
+              icon: Icons.star,
+              color: AppTheme.superLike,
+              size: 46,
+              onPressed: () => _controller.swipeTop(),
+            ),
+            _ActionButton(
+              icon: Icons.favorite,
+              color: canLike ? AppTheme.success : Colors.grey.shade400,
+              size: 56,
+              onPressed: canLike
+                  ? () => _controller.swipeRight()
+                  : () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('No likes left today. Come back tomorrow!'),
+                          backgroundColor: AppTheme.primary,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
+                    },
+            ),
+          ],
+        );
+      },
     );
   }
 
