@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { register, login, refreshToken, getMe } = require('../controllers/authController');
+const { register, login, socialLogin, refreshToken, getMe } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -32,6 +32,16 @@ router.post(
   ],
   validate,
   login
+);
+
+router.post(
+  '/social',
+  [
+    body('provider').notEmpty().withMessage('Provider is required'),
+    body('token').notEmpty().withMessage('Token is required'),
+  ],
+  validate,
+  socialLogin
 );
 
 router.post('/refresh-token', refreshToken);

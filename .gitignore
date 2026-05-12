@@ -39,3 +39,11 @@ frontend/android/app/release/
 # Logs
 logs/
 *.log
+
+# Android keystore
+*.keystore
+*.jks
+keystore.properties
+
+# Uploads (user generated content)
+backend/uploads/

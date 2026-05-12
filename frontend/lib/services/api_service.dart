@@ -1,20 +1,15 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../models/match_model.dart';
 import '../models/message_model.dart';
+import '../utils/app_config.dart';
 
 class ApiService {
-  static String get _baseUrl {
-    if (kIsWeb) return 'http://localhost:3000/api';
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3000/api';
-    }
-    return 'http://localhost:3000/api';
-  }
+  static String get _baseUrl => AppConfig.apiBaseUrl;
 
   late final Dio _dio;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();

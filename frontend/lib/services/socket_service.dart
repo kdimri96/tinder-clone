@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/message_model.dart';
 import '../models/match_model.dart';
+import '../utils/app_config.dart';
 
 typedef MessageCallback = void Function(MessageModel message);
 typedef MatchCallback = void Function(MatchModel match);
@@ -9,16 +10,7 @@ typedef TypingCallback = void Function(String userId, bool isTyping);
 typedef PresenceCallback = void Function(String userId, bool isOnline);
 
 class SocketService {
-  static String get _baseUrl {
-    // kIsWeb must be checked first — dart:io is not available on web.
-    if (kIsWeb) {
-      return 'http://localhost:3000';
-    }
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3000'; // Android emulator loopback
-    }
-    return 'http://localhost:3000'; // iOS simulator & other platforms
-  }
+  static String get _baseUrl => AppConfig.socketBaseUrl;
 
   IO.Socket? _socket;
 

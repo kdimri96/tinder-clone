@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../utils/app_config.dart';
 
 class NetworkImageWidget extends StatelessWidget {
   final String imageUrl;
@@ -7,9 +8,6 @@ class NetworkImageWidget extends StatelessWidget {
   final double? width;
   final double? height;
   final BorderRadius? borderRadius;
-
-  // Base URL for relative paths
-  static const String _baseUrl = 'http://10.0.2.2:3000';
 
   const NetworkImageWidget({
     Key? key,
@@ -22,7 +20,7 @@ class NetworkImageWidget extends StatelessWidget {
 
   String get _fullUrl {
     if (imageUrl.startsWith('http')) return imageUrl;
-    return '$_baseUrl$imageUrl';
+    return '${AppConfig.mediaBaseUrl}$imageUrl';
   }
 
   @override

@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: false,
     minlength: [6, 'Password must be at least 6 characters'],
     select: false,
   },
@@ -66,6 +66,9 @@ const userSchema = new mongoose.Schema({
   lastActive: { type: Date, default: Date.now },
   isProfileComplete: { type: Boolean, default: false },
   pushTokens: [{ type: String }],
+  // Social auth
+  provider: { type: String, enum: ['local', 'google', 'facebook', 'apple'], default: 'local' },
+  providerId: { type: String, default: null },
 }, {
   timestamps: true,
 });
