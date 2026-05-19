@@ -83,9 +83,9 @@ class DiscoveryProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> swipeRight(String targetId) async {
-    if (!hasLikesLeft) {
-      _error = 'You have used all $dailyLikeLimit likes for today. Come back tomorrow!';
+  Future<bool> swipeRight(String targetId, {bool bypassLimit = false}) async {
+    if (!bypassLimit && !hasLikesLeft) {
+      _error = 'You have used all $_dailyLikeLimit likes for today. Come back tomorrow!';
       notifyListeners();
       return false;
     }

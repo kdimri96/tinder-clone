@@ -6,6 +6,7 @@ import 'providers/auth_provider.dart';
 import 'providers/discovery_provider.dart';
 import 'providers/match_provider.dart';
 import 'providers/chat_provider.dart';
+import 'providers/premium_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/login_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/complete_profile_screen.dart';
+import 'screens/premium_screen.dart';
 import 'models/user_model.dart';
 import 'utils/app_theme.dart';
 
@@ -45,6 +47,9 @@ class TinderCloneApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ChatProvider(apiService, socketService),
         ),
+        ChangeNotifierProvider(
+          create: (_) => PremiumProvider(apiService),
+        ),
       ],
       child: MaterialApp(
         title: 'Tinder Clone',
@@ -63,6 +68,8 @@ class TinderCloneApp extends StatelessWidget {
               return MaterialPageRoute(builder: (_) => const RegisterScreen());
             case '/complete-profile':
               return MaterialPageRoute(builder: (_) => const CompleteProfileScreen());
+            case '/premium':
+              return MaterialPageRoute(builder: (_) => const PremiumScreen());
             case '/home':
               return MaterialPageRoute(builder: (_) => const HomeScreen());
             case '/matches':

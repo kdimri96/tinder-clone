@@ -240,4 +240,30 @@ class ApiService {
   Future<String?> getStoredToken() async {
     return _readKey('access_token');
   }
+
+  // PAYMENTS
+  Future<Map<String, dynamic>> getPlans() async {
+    final response = await _dio.get('/payments/plans');
+    return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<Map<String, dynamic>> createPaymentOrder(String planId) async {
+    final response = await _dio.post('/payments/create-order', data: {'planId': planId});
+    return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<Map<String, dynamic>> verifyPayment({
+    required String orderId,
+    required String paymentId,
+    required String signature,
+    required String planId,
+  }) async {
+    final response = await _dio.post('/payments/verify', data: {
+      'razorpay_order_id': orderId,
+      'razorpay_payment_id': paymentId,
+      'razorpay_signature': signature,
+      'planId': planId,
+    });
+    return Map<String, dynamic>.from(response.data);
+  }
 }

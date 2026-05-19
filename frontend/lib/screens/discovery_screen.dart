@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../providers/auth_provider.dart';
 import '../providers/discovery_provider.dart';
+import '../providers/premium_provider.dart';
 import '../models/user_model.dart';
 import '../widgets/swipe_card.dart';
 import '../widgets/match_modal.dart';
@@ -34,6 +35,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     super.dispose();
   }
 
+  bool get _hasUnlimitedLikes =>
+      context.read<PremiumProvider>().isUnlimitedLikes;
+
   void _onSwipe(int index, int? oldIndex, CardSwiperDirection direction) {
     final provider = context.read<DiscoveryProvider>();
     final users = provider.users;
@@ -41,15 +45,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     final user = users[index];
 
     if (direction == CardSwiperDirection.right) {
-      if (!provider.hasLikesLeft) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('You\'ve used all 12 likes for today. Come back tomorrow!'),
-            backgroundColor: AppTheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+      if (!_hasUnlimitedLikes && !provider.hasLikesLeft) {
+        _showLikesExhaustedSnackbar();
         return;
       }
       _handleLike(user);
@@ -60,20 +57,39 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     }
   }
 
+  void _showLikesExhaustedSnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Expanded(
+              child: Text('No likes left today. Get Unlimited Likes!'),
+            ),
+            TextButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                Navigator.pushNamed(context, '/premium');
+              },
+              child: const Text('Upgrade', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   Future<void> _handleLike(UserModel user) async {
     final provider = context.read<DiscoveryProvider>();
-    if (!provider.hasLikesLeft) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('You\'ve used all 12 likes for today. Come back tomorrow!'),
-          backgroundColor: AppTheme.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+    final bypassLimit = _hasUnlimitedLikes;
+    if (!bypassLimit && !provider.hasLikesLeft) {
+      _showLikesExhaustedSnackbar();
       return;
     }
-    final isMatch = await provider.swipeRight(user.id);
+    final isMatch = await provider.swipeRight(user.id, bypassLimit: bypassLimit);
     if (isMatch && mounted) {
       final matchedUser = provider.matchedUser;
       if (matchedUser != null) {
@@ -120,25 +136,26 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               ],
             ),
             actions: [
-              Consumer<DiscoveryProvider>(
-                builder: (context, provider, _) {
-                  final remaining = provider.dailyLikesRemaining;
+              Consumer2<DiscoveryProvider, PremiumProvider>(
+                builder: (context, discovery, premium, _) {
+                  final unlimited = premium.isUnlimitedLikes;
+                  final remaining = discovery.dailyLikesRemaining;
                   return Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.only(right: 4),
                     child: Chip(
                       avatar: Icon(
-                        Icons.favorite,
+                        unlimited ? Icons.all_inclusive : Icons.favorite,
                         size: 14,
-                        color: remaining > 0 ? AppTheme.primary : Colors.grey,
+                        color: (unlimited || remaining > 0) ? AppTheme.primary : Colors.grey,
                       ),
                       label: Text(
-                        '$remaining',
+                        unlimited ? '∞' : '$remaining',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: remaining > 0 ? AppTheme.primary : Colors.grey,
+                          color: (unlimited || remaining > 0) ? AppTheme.primary : Colors.grey,
                         ),
                       ),
-                      backgroundColor: remaining > 0
+                      backgroundColor: (unlimited || remaining > 0)
                           ? AppTheme.primary.withOpacity(0.1)
                           : Colors.grey.shade200,
                       side: BorderSide.none,
@@ -146,6 +163,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                     ),
                   );
                 },
+              ),
+              IconButton(
+                icon: const Icon(Icons.workspace_premium, color: Color(0xFFFFAA00)),
+                tooltip: 'Get Premium',
+                onPressed: () => Navigator.pushNamed(context, '/premium'),
               ),
               IconButton(
                 icon: const Icon(Icons.tune),
@@ -221,9 +243,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Consumer<DiscoveryProvider>(
-      builder: (context, provider, _) {
-        final canLike = provider.hasLikesLeft;
+    return Consumer2<DiscoveryProvider, PremiumProvider>(
+      builder: (context, discovery, premium, _) {
+        final canLike = premium.isUnlimitedLikes || discovery.hasLikesLeft;
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -245,16 +267,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               size: 56,
               onPressed: canLike
                   ? () => _controller.swipeRight()
-                  : () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('No likes left today. Come back tomorrow!'),
-                          backgroundColor: AppTheme.primary,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      );
-                    },
+                  : _showLikesExhaustedSnackbar,
             ),
           ],
         );

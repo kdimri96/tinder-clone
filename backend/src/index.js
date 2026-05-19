@@ -16,6 +16,7 @@ const discoveryRoutes = require('./routes/discovery');
 const swipeRoutes = require('./routes/swipe');
 const matchRoutes = require('./routes/matches');
 const messageRoutes = require('./routes/messages');
+const paymentRoutes = require('./routes/payments');
 const { setupSocket } = require('./socket');
 
 const app = express();
@@ -98,6 +99,7 @@ app.use('/api/discovery', discoveryRoutes);
 app.use('/api/swipe', swipeRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // ── HEALTH CHECK ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {

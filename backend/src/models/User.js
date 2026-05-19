@@ -69,6 +69,13 @@ const userSchema = new mongoose.Schema({
   // Social auth
   provider: { type: String, enum: ['local', 'google', 'facebook', 'apple'], default: 'local' },
   providerId: { type: String, default: null },
+  // Premium / monetisation
+  isPremium: { type: Boolean, default: false },
+  premiumExpiresAt: { type: Date, default: null },
+  isUnlimitedLikes: { type: Boolean, default: false },
+  unlimitedLikesExpiresAt: { type: Date, default: null },
+  isBoosted: { type: Boolean, default: false },
+  boostExpiresAt: { type: Date, default: null },
 }, {
   timestamps: true,
 });

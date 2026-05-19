@@ -13,7 +13,14 @@ class UserModel {
   final String? school;
   final bool isProfileComplete;
   final DateTime? lastActive;
-  final double? distance; // from discovery
+  final double? distance;
+  // Premium
+  final bool isPremium;
+  final bool isUnlimitedLikes;
+  final bool isBoosted;
+  final DateTime? premiumExpiresAt;
+  final DateTime? unlimitedLikesExpiresAt;
+  final DateTime? boostExpiresAt;
 
   UserModel({
     required this.id,
@@ -31,6 +38,12 @@ class UserModel {
     this.isProfileComplete = false,
     this.lastActive,
     this.distance,
+    this.isPremium = false,
+    this.isUnlimitedLikes = false,
+    this.isBoosted = false,
+    this.premiumExpiresAt,
+    this.unlimitedLikesExpiresAt,
+    this.boostExpiresAt,
   }) : preferences = preferences ?? UserPreferences();
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
