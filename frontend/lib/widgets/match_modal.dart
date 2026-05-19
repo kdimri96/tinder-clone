@@ -33,27 +33,19 @@ class _MatchModalState extends State<MatchModal> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+        vsync: this, duration: const Duration(milliseconds: 600));
     _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
+        vsync: this, duration: const Duration(milliseconds: 500));
 
-    _scaleAnimation = CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.elasticOut,
-    );
+    _scaleAnimation =
+        CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut);
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
 
     _scaleController.forward();
-    Future.delayed(const Duration(milliseconds: 200), () {
-      _slideController.forward();
-    });
+    Future.delayed(const Duration(milliseconds: 200), () => _slideController.forward());
   }
 
   @override
@@ -68,9 +60,10 @@ class _MatchModalState extends State<MatchModal> with TickerProviderStateMixin {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFFF4458), Color(0xFFFD297B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A0A33), AppTheme.primary, AppTheme.secondary],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: [0.0, 0.5, 1.0],
         ),
       ),
       child: SafeArea(
@@ -81,69 +74,89 @@ class _MatchModalState extends State<MatchModal> with TickerProviderStateMixin {
               scale: _scaleAnimation,
               child: Column(
                 children: [
-                  const Text(
-                    "It's a Match!",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 42,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
+                  // Glow ring around text
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(50),
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.2), width: 1),
+                      color: Colors.white.withOpacity(0.05),
+                    ),
+                    child: const Text(
+                      "It's a Match!",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     'You and ${widget.matchedUser.name} liked each other',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.75), fontSize: 15),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 44),
             // Photo pair
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildProfileCircle(widget.currentUser),
-                const SizedBox(width: 16),
-                const Icon(Icons.favorite, color: Colors.white, size: 36),
-                const SizedBox(width: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.15),
+                    ),
+                    child: const Icon(Icons.favorite, color: Colors.white, size: 24),
+                  ),
+                ),
                 _buildProfileCircle(widget.matchedUser),
               ],
             ),
-            const SizedBox(height: 60),
+            const SizedBox(height: 56),
             SlideTransition(
               position: _slideAnimation,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
+                padding: const EdgeInsets.symmetric(horizontal: 36),
                 child: Column(
                   children: [
-                    ElevatedButton(
-                      onPressed: widget.onSendMessage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppTheme.primary,
-                        minimumSize: const Size(double.infinity, 56),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: widget.onSendMessage,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.primary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28)),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Send a Message',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                         ),
                       ),
-                      child: const Text(
-                        'Send a Message',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     TextButton(
                       onPressed: widget.onKeepSwiping,
-                      child: const Text(
+                      child: Text(
                         'Keep Swiping',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -160,16 +173,16 @@ class _MatchModalState extends State<MatchModal> with TickerProviderStateMixin {
 
   Widget _buildProfileCircle(UserModel user) {
     return Container(
-      width: 130,
-      height: 130,
+      width: 126,
+      height: 126,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 4),
+        border: Border.all(color: Colors.white, width: 3),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: AppTheme.primary.withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -177,8 +190,8 @@ class _MatchModalState extends State<MatchModal> with TickerProviderStateMixin {
         child: user.firstPhoto.isNotEmpty
             ? NetworkImageWidget(imageUrl: user.firstPhoto, fit: BoxFit.cover)
             : Container(
-                color: Colors.white.withOpacity(0.3),
-                child: const Icon(Icons.person, size: 60, color: Colors.white),
+                color: AppTheme.surface,
+                child: const Icon(Icons.person, size: 56, color: AppTheme.textMedium),
               ),
       ),
     );

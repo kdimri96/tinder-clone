@@ -54,7 +54,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked == null || !mounted) return;
-
     try {
       final api = context.read<ApiService>();
       final updatedUser = await api.uploadPhoto(picked);
@@ -85,7 +84,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-
     try {
       final api = context.read<ApiService>();
       final updatedUser = await api.updateProfile({
@@ -99,7 +97,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context.read<AuthProvider>().updateUser(updatedUser);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved!'), backgroundColor: AppTheme.success),
+          const SnackBar(
+            content: Text('Profile saved!'),
+            backgroundColor: AppTheme.success,
+          ),
         );
       }
     } catch (e) {
@@ -119,17 +120,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (user == null) return const SizedBox();
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AppTheme.primary, AppTheme.secondary],
+          ).createShader(bounds),
+          child: const Text('Profile',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        ),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _saveProfile,
             child: _isSaving
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text('Save', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700)),
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))
+                : const Text('Save',
+                    style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700)),
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: AppTheme.textMedium),
             onPressed: () async {
               await context.read<AuthProvider>().logout();
               if (mounted) Navigator.pushReplacementNamed(context, '/welcome');
@@ -142,18 +154,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Photo grid
             _buildPhotoGrid(user),
-            const SizedBox(height: 24),
-
-            // Name (read-only)
+            const SizedBox(height: 28),
             _SectionTitle('About ${user.name}'),
-            const SizedBox(height: 12),
-
-            TextFormField(
+            const SizedBox(height: 14),
+            _darkField(
               controller: _ageController,
+              label: 'Age',
+              icon: Icons.cake_outlined,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Age', prefixIcon: Icon(Icons.cake_outlined)),
               validator: (v) {
                 final age = int.tryParse(v ?? '');
                 if (age == null || age < 18 || age > 100) return 'Enter valid age (18-100)';
@@ -161,11 +170,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             const SizedBox(height: 12),
-
-            // Gender
             DropdownButtonFormField<String>(
               value: _selectedGender,
-              decoration: const InputDecoration(labelText: 'Gender', prefixIcon: Icon(Icons.person_outline)),
+              dropdownColor: AppTheme.surface,
+              style: const TextStyle(color: AppTheme.textDark, fontSize: 15),
+              decoration: _inputDecoration('Gender', Icons.person_outline),
               items: const [
                 DropdownMenuItem(value: 'male', child: Text('Male')),
                 DropdownMenuItem(value: 'female', child: Text('Female')),
@@ -174,62 +183,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onChanged: (v) => setState(() => _selectedGender = v),
             ),
             const SizedBox(height: 12),
-
-            TextFormField(
+            _darkField(
               controller: _bioController,
+              label: 'Bio',
+              icon: Icons.edit_outlined,
               maxLines: 3,
               maxLength: 500,
-              decoration: const InputDecoration(
-                labelText: 'Bio',
-                prefixIcon: Icon(Icons.edit_outlined),
-                alignLabelWithHint: true,
-              ),
             ),
             const SizedBox(height: 12),
-
-            TextFormField(
+            _darkField(
               controller: _jobController,
-              decoration: const InputDecoration(labelText: 'Job', prefixIcon: Icon(Icons.work_outline)),
+              label: 'Job',
+              icon: Icons.work_outline,
             ),
             const SizedBox(height: 12),
-
-            TextFormField(
+            _darkField(
               controller: _schoolController,
-              decoration: const InputDecoration(labelText: 'School', prefixIcon: Icon(Icons.school_outlined)),
+              label: 'School',
+              icon: Icons.school_outlined,
             ),
-            const SizedBox(height: 24),
-
+            const SizedBox(height: 28),
             _SectionTitle('Interests'),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: _interestOptions.map((interest) {
                 final selected = _interests.contains(interest);
-                return FilterChip(
-                  label: Text(interest),
-                  selected: selected,
-                  selectedColor: AppTheme.primary.withOpacity(0.15),
-                  checkmarkColor: AppTheme.primary,
-                  labelStyle: TextStyle(
-                    color: selected ? AppTheme.primary : AppTheme.textMedium,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    if (selected) {
+                      _interests.remove(interest);
+                    } else {
+                      _interests.add(interest);
+                    }
+                  }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? AppTheme.primary.withOpacity(0.15)
+                          : AppTheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: selected ? AppTheme.primary : AppTheme.surface2,
+                        width: selected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      interest,
+                      style: TextStyle(
+                        color: selected ? AppTheme.primary : AppTheme.textMedium,
+                        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
-                  onSelected: (val) {
-                    setState(() {
-                      if (val) {
-                        _interests.add(interest);
-                      } else {
-                        _interests.remove(interest);
-                      }
-                    });
-                  },
                 );
               }).toList(),
             ),
             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _darkField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    int maxLines = 1,
+    int? maxLength,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      maxLength: maxLength,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: const TextStyle(color: AppTheme.textDark, fontSize: 15),
+      decoration: _inputDecoration(label, icon),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppTheme.textMedium),
+      prefixIcon: Icon(icon, color: AppTheme.textMedium, size: 20),
+      filled: true,
+      fillColor: AppTheme.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.surface2),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.surface2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.error),
       ),
     );
   }
@@ -247,68 +309,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
       itemCount: 6,
       itemBuilder: (context, index) {
         if (index < user.photos.length) {
-          return GestureDetector(
-            onLongPress: () => _showDeletePhotoDialog(user.photos[index]),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                NetworkImageWidget(
-                  imageUrl: user.photos[index],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: GestureDetector(
-                    onTap: () => _deletePhoto(user.photos[index]),
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.close, size: 16, color: Colors.red),
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              NetworkImageWidget(
+                imageUrl: user.photos[index],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              Positioned(
+                top: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () => _deletePhoto(user.photos[index]),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
                     ),
+                    child: const Icon(Icons.close, size: 14, color: Colors.white),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         }
-        // Empty slot
         return GestureDetector(
           onTap: _pickAndUploadPhoto,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: AppTheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+              border: Border.all(color: AppTheme.surface2),
             ),
-            child: Icon(Icons.add, color: AppTheme.primary, size: 32),
+            child: const Icon(Icons.add, color: AppTheme.primary, size: 32),
           ),
         );
       },
-    );
-  }
-
-  void _showDeletePhotoDialog(String photoUrl) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Photo'),
-        content: const Text('Remove this photo from your profile?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _deletePhoto(photoUrl);
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -322,7 +360,7 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: FontWeight.w700,
         color: AppTheme.textDark,
       ),

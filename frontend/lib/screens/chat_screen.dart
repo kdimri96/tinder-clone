@@ -61,12 +61,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
-
     _textController.clear();
     _isTyping = false;
     _typingTimer?.cancel();
     context.read<ChatProvider>().stopTyping(widget.matchId);
-
     await context.read<ChatProvider>().sendMessage(widget.matchId, text);
     _scrollToBottom();
   }
@@ -86,7 +84,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final myId = context.read<AuthProvider>().user?.id ?? '';
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
+        backgroundColor: AppTheme.surface,
         leadingWidth: 30,
         title: Row(
           children: [
@@ -101,27 +101,26 @@ class _ChatScreenState extends State<ChatScreen> {
                   : Container(
                       width: 40,
                       height: 40,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.person, color: Colors.grey),
+                      color: AppTheme.surface2,
+                      child: const Icon(Icons.person, color: AppTheme.textMedium),
                     ),
             ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.otherUser.name, style: const TextStyle(fontSize: 16)),
+                Text(widget.otherUser.name,
+                    style: const TextStyle(fontSize: 16, color: AppTheme.textDark)),
                 if (widget.otherUser.isOnline)
-                  Text(
-                    'Online',
-                    style: TextStyle(color: AppTheme.success, fontSize: 12),
-                  ),
+                  Text('Online',
+                      style: TextStyle(color: AppTheme.success, fontSize: 12)),
               ],
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert, color: AppTheme.textMedium),
             onPressed: () {},
           ),
         ],
@@ -142,14 +141,27 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('🎉', style: TextStyle(fontSize: 48)),
-                        const SizedBox(height: 12),
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [AppTheme.primary, AppTheme.secondary],
+                            ),
+                          ),
+                          child: const Icon(Icons.favorite, color: Colors.white, size: 36),
+                        ),
+                        const SizedBox(height: 16),
                         Text(
                           "You matched with ${widget.otherUser.name}!",
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textDark),
                         ),
                         const SizedBox(height: 8),
-                        Text(
+                        const Text(
                           'Say hello to start the conversation',
                           style: TextStyle(color: AppTheme.textMedium),
                         ),
@@ -168,13 +180,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     final msg = messages[index];
                     final isMine = msg.senderId == myId || msg.senderId == 'me';
                     final showTime = index == messages.length - 1 ||
-                        messages[index + 1].createdAt.difference(msg.createdAt).inMinutes > 5;
-
+                        messages[index + 1]
+                            .createdAt
+                            .difference(msg.createdAt)
+                            .inMinutes >
+                            5;
                     return MessageBubble(
-                      message: msg,
-                      isMine: isMine,
-                      showTime: showTime,
-                    );
+                        message: msg, isMine: isMine, showTime: showTime);
                   },
                 );
               },
@@ -191,7 +203,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Text(
                       '${widget.otherUser.name} is typing...',
-                      style: TextStyle(color: AppTheme.textLight, fontSize: 13, fontStyle: FontStyle.italic),
+                      style: const TextStyle(
+                          color: AppTheme.textLight,
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic),
                     ),
                   ],
                 ),
@@ -201,10 +216,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
           // Input bar
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: const BoxDecoration(
+              color: AppTheme.surface,
+              border: Border(top: BorderSide(color: AppTheme.surface2)),
             ),
             child: Row(
               children: [
@@ -214,20 +229,25 @@ class _ChatScreenState extends State<ChatScreen> {
                     onChanged: _onTypingChanged,
                     maxLines: 4,
                     minLines: 1,
+                    style: const TextStyle(color: AppTheme.textDark, fontSize: 15),
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      hintStyle: const TextStyle(color: AppTheme.textLight),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      filled: true,
+                      fillColor: AppTheme.surface2,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide.none,
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide.none,
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: AppTheme.primary),
+                        borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
@@ -237,13 +257,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 GestureDetector(
                   onTap: _sendMessage,
                   child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
+                    width: 46,
+                    height: 46,
+                    decoration: const BoxDecoration(
                       gradient: AppTheme.primaryGradient,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.send, color: Colors.white, size: 20),
+                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                   ),
                 ),
               ],

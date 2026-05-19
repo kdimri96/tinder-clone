@@ -17,7 +17,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   int _currentPage = 0;
   bool _isSaving = false;
 
-  // Form data
   final _bioController = TextEditingController();
   final _jobController = TextEditingController();
   final _schoolController = TextEditingController();
@@ -68,18 +67,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   }
 
   Future<void> _saveAndFinish() async {
-    if (_age == null) {
-      _showError('Please enter your age');
-      return;
-    }
-    if (_gender == null) {
-      _showError('Please select your gender');
-      return;
-    }
-    if (_uploadedPhotos.isEmpty) {
-      _showError('Please add at least one photo');
-      return;
-    }
+    if (_age == null) { _showError('Please enter your age'); return; }
+    if (_gender == null) { _showError('Please select your gender'); return; }
+    if (_uploadedPhotos.isEmpty) { _showError('Please add at least one photo'); return; }
 
     setState(() => _isSaving = true);
     try {
@@ -97,7 +87,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         context.read<AuthProvider>().updateUser(updatedUser);
         Navigator.pushReplacementNamed(context, '/home');
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) _showError('Failed to save profile. Try again.');
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -106,12 +96,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: AppTheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+      SnackBar(content: Text(msg), backgroundColor: AppTheme.error),
     );
   }
 
@@ -133,7 +118,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppTheme.background,
       body: Column(
         children: [
           _buildHeader(),
@@ -165,9 +150,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     ];
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: AppTheme.primaryGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
@@ -181,7 +166,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.local_fire_department, color: Colors.white, size: 28),
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.white.withOpacity(0.2),
+                    ),
+                    child: const Center(
+                      child: Text('K',
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Step ${_currentPage + 1} of 3',
@@ -192,11 +188,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               const SizedBox(height: 10),
               Text(
                 titles[_currentPage],
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 4),
               Text(
@@ -216,12 +208,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       child: Row(
         children: List.generate(3, (i) {
           return Expanded(
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.symmetric(horizontal: 4),
               height: 4,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(2),
-                color: i <= _currentPage ? AppTheme.primary : const Color(0xFFE0E0E0),
+                color: i <= _currentPage ? AppTheme.primary : AppTheme.surface2,
               ),
             ),
           );
@@ -229,8 +222,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       ),
     );
   }
-
-  // ── PAGE 1: BASICS ─────────────────────────────────────────────
 
   Widget _buildBasicsPage() {
     return SingleChildScrollView(
@@ -240,10 +231,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         children: [
           _SectionLabel(label: 'Your Age'),
           const SizedBox(height: 10),
-          _AgeSelector(
-            value: _age,
-            onChanged: (v) => setState(() => _age = v),
-          ),
+          _AgeSelector(value: _age, onChanged: (v) => setState(() => _age = v)),
           const SizedBox(height: 24),
           _SectionLabel(label: 'I am a'),
           const SizedBox(height: 10),
@@ -258,19 +246,29 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                   decoration: BoxDecoration(
-                    color: selected ? AppTheme.primary : Colors.white,
+                    gradient: selected
+                        ? const LinearGradient(
+                            colors: [AppTheme.primary, AppTheme.secondary],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          )
+                        : null,
+                    color: selected ? null : AppTheme.surface,
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(
-                      color: selected ? AppTheme.primary : const Color(0xFFDEDEDE),
+                      color: selected ? AppTheme.primary : AppTheme.surface2,
                     ),
                     boxShadow: selected
-                        ? [BoxShadow(color: AppTheme.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))]
+                        ? [BoxShadow(
+                            color: AppTheme.primary.withOpacity(0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4))]
                         : [],
                   ),
                   child: Text(
                     g,
                     style: TextStyle(
-                      color: selected ? Colors.white : Colors.black87,
+                      color: selected ? Colors.white : AppTheme.textMedium,
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                     ),
@@ -283,8 +281,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       ),
     );
   }
-
-  // ── PAGE 2: PHOTOS ─────────────────────────────────────────────
 
   Widget _buildPhotosPage() {
     return SingleChildScrollView(
@@ -311,8 +307,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: Colors.white,
-                    border: Border.all(color: const Color(0xFFEEEEEE)),
+                    color: AppTheme.surface,
+                    border: Border.all(color: AppTheme.surface2),
                     image: hasPhoto
                         ? DecorationImage(
                             image: NetworkImage(_uploadedPhotos[i]),
@@ -325,17 +321,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_circle_outline,
-                                color: AppTheme.primary, size: 32),
+                            Icon(Icons.add_circle_outline, color: AppTheme.primary, size: 32),
                             const SizedBox(height: 6),
-                            Text(
-                              'Add photo',
-                              style: TextStyle(
-                                color: AppTheme.primary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                            Text('Add photo',
+                                style: TextStyle(
+                                    color: AppTheme.primary, fontSize: 11, fontWeight: FontWeight.w500)),
                           ],
                         ),
                 ),
@@ -352,8 +342,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
-  // ── PAGE 3: ABOUT ──────────────────────────────────────────────
-
   Widget _buildAboutPage() {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -366,24 +354,24 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             controller: _bioController,
             maxLines: 3,
             maxLength: 500,
-            style: const TextStyle(fontSize: 15),
+            style: const TextStyle(fontSize: 15, color: AppTheme.textDark),
             decoration: InputDecoration(
               hintText: 'Tell others about yourself...',
-              hintStyle: TextStyle(color: Colors.grey.shade400),
+              hintStyle: const TextStyle(color: AppTheme.textLight),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AppTheme.surface,
               contentPadding: const EdgeInsets.all(16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+                borderSide: const BorderSide(color: AppTheme.surface2),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+                borderSide: const BorderSide(color: AppTheme.surface2),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
+                borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
               ),
             ),
           ),
@@ -417,17 +405,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: selected ? AppTheme.primary.withOpacity(0.1) : Colors.white,
+                    color: selected ? AppTheme.primary.withOpacity(0.15) : AppTheme.surface,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: selected ? AppTheme.primary : const Color(0xFFDEDEDE),
+                      color: selected ? AppTheme.primary : AppTheme.surface2,
                       width: selected ? 1.5 : 1,
                     ),
                   ),
                   child: Text(
                     interest,
                     style: TextStyle(
-                      color: selected ? AppTheme.primary : Colors.black87,
+                      color: selected ? AppTheme.primary : AppTheme.textMedium,
                       fontSize: 13,
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                     ),
@@ -447,37 +435,49 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).padding.bottom + 12),
       decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEEEEEE))),
+        color: AppTheme.surface,
+        border: Border(top: BorderSide(color: AppTheme.surface2)),
       ),
       child: SizedBox(
         width: double.infinity,
         height: 54,
-        child: ElevatedButton(
-          onPressed: _isSaving ? null : _nextPage,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-            elevation: 0,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            gradient: const LinearGradient(
+              colors: [AppTheme.primary, AppTheme.secondary],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primary.withOpacity(0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-          child: _isSaving
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : Text(
-                  isLastPage ? 'Finish & Find Matches' : 'Continue',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                ),
+          child: ElevatedButton(
+            onPressed: _isSaving ? null : _nextPage,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            ),
+            child: _isSaving
+                ? const SizedBox(width: 22, height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Text(
+                    isLastPage ? 'Finish & Find Matches' : 'Continue',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                  ),
+          ),
         ),
       ),
     );
   }
 }
-
-// ── HELPER WIDGETS ─────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String label;
@@ -490,7 +490,7 @@ class _SectionLabel extends StatelessWidget {
       style: const TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w700,
-        color: Color(0xFF333333),
+        color: AppTheme.textMedium,
         letterSpacing: 0.3,
       ),
     );
@@ -506,24 +506,24 @@ class _SimpleTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      style: const TextStyle(fontSize: 15),
+      style: const TextStyle(fontSize: 15, color: AppTheme.textDark),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400),
+        hintStyle: const TextStyle(color: AppTheme.textLight),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppTheme.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+          borderSide: const BorderSide(color: AppTheme.surface2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+          borderSide: const BorderSide(color: AppTheme.surface2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
         ),
       ),
     );
@@ -539,22 +539,24 @@ class _AgeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<int>(
       value: value,
-      hint: Text('Select your age', style: TextStyle(color: Colors.grey.shade400)),
+      dropdownColor: AppTheme.surface,
+      hint: const Text('Select your age', style: TextStyle(color: AppTheme.textLight)),
+      style: const TextStyle(color: AppTheme.textDark, fontSize: 15),
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppTheme.surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+          borderSide: const BorderSide(color: AppTheme.surface2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+          borderSide: const BorderSide(color: AppTheme.surface2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
         ),
       ),
       items: List.generate(82, (i) => i + 18).map((age) {
