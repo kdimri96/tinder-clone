@@ -302,8 +302,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Center(
       child: GestureDetector(
         onTap: () => Navigator.pushReplacementNamed(context, '/login'),
-        child: const RichText(
-          text: TextSpan(
+        child: RichText(
+          text: const TextSpan(
             text: 'Already have an account?  ',
             style: TextStyle(color: AppTheme.textMedium, fontSize: 15),
             children: [

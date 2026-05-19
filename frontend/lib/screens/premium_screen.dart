@@ -61,7 +61,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(provider.error ?? 'Failed to create order'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -74,14 +74,14 @@ class _PremiumScreenState extends State<PremiumScreen> {
       'key': orderData['keyId'],
       'amount': orderData['amount'],
       'currency': orderData['currency'] ?? 'INR',
-      'name': 'Tinder Clone',
+      'name': 'KneedYou',
       'description': orderData['description'] ?? plan.description,
       'order_id': orderData['orderId'],
       'prefill': {
         'contact': '',
         'email': user?.email ?? '',
       },
-      'theme': {'color': '#FF4B6A'},
+      'theme': {'color': '#7B4DFF'},
     };
 
     _razorpay!.open(options);
@@ -354,7 +354,7 @@ class _PlanCard extends StatelessWidget {
     ),
     'unlimited_likes': _PlanMeta(
       icon: Icons.favorite,
-      color: Color(0xFFFF4B6A),
+      color: AppTheme.secondary,
       title: 'Unlimited Likes',
       subtitle: 'Swipe right as much as you want',
       perks: ['No daily like limit', 'Like everyone you\'re interested in', 'Valid for 30 days'],
@@ -363,7 +363,7 @@ class _PlanCard extends StatelessWidget {
     'premium': _PlanMeta(
       icon: Icons.workspace_premium,
       color: Color(0xFFFFAA00),
-      title: 'Tinder Gold',
+      title: 'KneedYou Gold',
       subtitle: 'The full premium experience',
       perks: [
         'Unlimited Likes for 30 days',
