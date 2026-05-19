@@ -75,6 +75,18 @@ class UserModel {
       distance: json['distance'] != null
           ? (json['distance'] as num).toDouble()
           : null,
+      isPremium: json['isPremium'] ?? false,
+      isUnlimitedLikes: json['isUnlimitedLikes'] ?? false,
+      isBoosted: json['isBoosted'] ?? false,
+      premiumExpiresAt: json['premiumExpiresAt'] != null
+          ? DateTime.tryParse(json['premiumExpiresAt'])
+          : null,
+      unlimitedLikesExpiresAt: json['unlimitedLikesExpiresAt'] != null
+          ? DateTime.tryParse(json['unlimitedLikesExpiresAt'])
+          : null,
+      boostExpiresAt: json['boostExpiresAt'] != null
+          ? DateTime.tryParse(json['boostExpiresAt'])
+          : null,
     );
   }
 

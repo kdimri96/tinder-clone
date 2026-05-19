@@ -44,8 +44,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   void _onSwipe(int index, int? oldIndex, CardSwiperDirection direction) {
     final provider = context.read<DiscoveryProvider>();
     final users = provider.users;
-    if (index >= users.length) return;
-    final user = users[index];
+    // oldIndex is the card that was swiped; index is the new top card
+    final swipedIndex = oldIndex ?? index;
+    if (swipedIndex >= users.length) return;
+    final user = users[swipedIndex];
 
     if (direction == CardSwiperDirection.right) {
       if (!_hasUnlimitedLikes && !provider.hasLikesLeft) {

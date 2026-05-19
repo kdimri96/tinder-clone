@@ -18,7 +18,6 @@ class DiscoveryProvider extends ChangeNotifier {
   String? _error;
   UserModel? _matchedUser;
   int _dailyLikesUsed = 0;
-  UserModel? _lastRewoundUser;
 
   DiscoveryProvider(this._api) {
     _loadDailyLikeCount();
