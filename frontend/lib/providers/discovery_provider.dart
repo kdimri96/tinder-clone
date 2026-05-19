@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 
-const int _dailyLikeLimit = 12;
+const int _dailyLikeLimit = 10;
 const String _prefLikeCount = 'daily_like_count';
 const String _prefLikeDate = 'daily_like_date';
 

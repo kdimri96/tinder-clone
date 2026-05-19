@@ -10,7 +10,7 @@ const razorpay = new Razorpay({
 // Plan definitions (amounts in paise — 1 INR = 100 paise)
 const PLANS = {
   unlimited_likes_monthly: {
-    amount: 29900,       // ₹299
+    amount: 39900,       // ₹399
     currency: 'INR',
     description: 'Unlimited Likes — 30 days',
     durationDays: 30,
