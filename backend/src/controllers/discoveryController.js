@@ -15,6 +15,8 @@ const getNearby = async (req, res) => {
     const minAge = user.preferences?.minAge || 18;
     const maxAge = user.preferences?.maxAge || 99;
     const genderPrefs = user.preferences?.genderPreference || ['male', 'female', 'other'];
+    const myGender = user.gender || 'other';
+    const myInterests = user.interests || [];
 
     const [longitude, latitude] = user.location?.coordinates || [0, 0];
 
@@ -30,10 +32,32 @@ const getNearby = async (req, res) => {
       {
         $match: {
           _id: { $ne: user._id, $nin: swipedIds },
+          // Matches the current user's gender preference
           gender: { $in: genderPrefs },
+          // The candidate must also be interested in the current user's gender (mutual preference)
+          'preferences.genderPreference': myGender,
           age: { $gte: minAge, $lte: maxAge },
           isProfileComplete: true,
         },
+      },
+      {
+        // Score by number of shared interests — more overlap = higher score
+        $addFields: {
+          interestScore: myInterests.length > 0
+            ? {
+                $size: {
+                  $ifNull: [
+                    { $setIntersection: ['$interests', myInterests] },
+                    [],
+                  ],
+                },
+              }
+            : 0,
+        },
+      },
+      {
+        // Sort: most shared interests first, then closest distance
+        $sort: { interestScore: -1, distance: 1 },
       },
       {
         $project: {
