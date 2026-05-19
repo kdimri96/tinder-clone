@@ -42,7 +42,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         SnackBar(
           content: Text(auth.error!),
           backgroundColor: AppTheme.error,
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -52,14 +51,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFFFF4458)],
-            stops: [0.0, 0.45, 1.0],
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -85,43 +77,77 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget _buildLogo() {
     return Column(
       children: [
+        // Glassmorphism-inspired logo container
         Container(
-          width: 96,
-          height: 96,
+          width: 104,
+          height: 104,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(28),
+            gradient: const LinearGradient(
+              colors: [AppTheme.primary, AppTheme.secondary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.white.withOpacity(0.1),
-                blurRadius: 30,
-                spreadRadius: 10,
+                color: AppTheme.primary.withOpacity(0.55),
+                blurRadius: 40,
+                spreadRadius: 2,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: AppTheme.secondary.withOpacity(0.25),
+                blurRadius: 60,
+                offset: const Offset(0, 20),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.local_fire_department,
-            color: Colors.white,
-            size: 56,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Subtle inner glow
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withOpacity(0.07),
+                ),
+              ),
+              const Text(
+                'K',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 56,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -2,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 20),
-        const Text(
-          'tinder',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 50,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 4,
+        const SizedBox(height: 24),
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [AppTheme.primary, AppTheme.secondary],
+          ).createShader(bounds),
+          child: const Text(
+            'KneedYou',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 42,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Match. Chat. Date.',
+          'Find who needs you.',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 16,
-            letterSpacing: 2,
+            color: Colors.white.withOpacity(0.55),
+            fontSize: 15,
+            letterSpacing: 1.5,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -136,7 +162,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           isLoading: _loadingProvider == 'apple',
           icon: const FaIcon(FontAwesomeIcons.apple, color: Colors.white, size: 20),
           label: 'Continue with Apple',
-          backgroundColor: Colors.black,
+          backgroundColor: const Color(0xFF1C1C1E),
           textColor: Colors.white,
           onPressed: () => _handleSocialLogin('apple'),
         ),
@@ -166,21 +192,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return Row(
       children: [
         Expanded(
-          child: Divider(color: Colors.white.withOpacity(0.25), thickness: 1),
+          child: Divider(color: Colors.white.withOpacity(0.12), thickness: 1),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'or use email',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.55),
+              color: Colors.white.withOpacity(0.4),
               fontSize: 13,
               letterSpacing: 0.5,
             ),
           ),
         ),
         Expanded(
-          child: Divider(color: Colors.white.withOpacity(0.25), thickness: 1),
+          child: Divider(color: Colors.white.withOpacity(0.12), thickness: 1),
         ),
       ],
     );
@@ -192,19 +218,39 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         SizedBox(
           width: double.infinity,
           height: 54,
-          child: ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/register'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppTheme.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              gradient: const LinearGradient(
+                colors: [AppTheme.primary, AppTheme.secondary],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               ),
-              elevation: 0,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withOpacity(0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            child: const Text(
-              'Create Account',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            child: ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/register'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: const Text(
+                'Create Account',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ),
@@ -215,7 +261,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             text: TextSpan(
               text: 'Already have an account?  ',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.65),
+                color: Colors.white.withOpacity(0.5),
                 fontSize: 15,
               ),
               children: const [
@@ -270,10 +316,7 @@ class _SocialButton extends StatelessWidget {
             ? SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: textColor,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2, color: textColor),
               )
             : Stack(
                 alignment: Alignment.center,

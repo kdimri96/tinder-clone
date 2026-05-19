@@ -246,9 +246,9 @@ class _PremiumScreenState extends State<PremiumScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFFFFD700),
                 AppTheme.primary,
-                const Color(0xFFFF6B35),
+                Color(0xFFAA3DFF),
+                AppTheme.secondary,
               ],
             ),
           ),

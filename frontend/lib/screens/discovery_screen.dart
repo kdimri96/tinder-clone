@@ -120,20 +120,19 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.local_fire_department, color: AppTheme.primary, size: 28),
-                const SizedBox(width: 6),
-                Text(
-                  'Tinder',
-                  style: TextStyle(
-                    color: AppTheme.primary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 22,
-                  ),
+            title: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [AppTheme.primary, AppTheme.secondary],
+              ).createShader(bounds),
+              child: const Text(
+                'KneedYou',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 22,
+                  letterSpacing: 0.5,
                 ),
-              ],
+              ),
             ),
             actions: [
               Consumer2<DiscoveryProvider, PremiumProvider>(

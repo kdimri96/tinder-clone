@@ -71,8 +71,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _loadingProvider = null);
 
     if (success) {
-      final destination = auth.isProfileComplete ? '/home' : '/complete-profile';
-      Navigator.pushReplacementNamed(context, destination);
+      Navigator.pushReplacementNamed(
+          context, auth.isProfileComplete ? '/home' : '/complete-profile');
     } else if (auth.error != null) {
       _showError(auth.error!);
     }
@@ -80,19 +80,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppTheme.error),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppTheme.background,
       body: Column(
         children: [
           _buildHeader(context),
@@ -124,9 +119,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: AppTheme.primaryGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(36),
           bottomRight: Radius.circular(36),
         ),
@@ -144,21 +139,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
-              const Icon(Icons.local_fire_department, color: Colors.white, size: 40),
-              const SizedBox(height: 10),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: Colors.white.withOpacity(0.2),
+                ),
+                child: const Center(
+                  child: Text(
+                    'K',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               const Text(
-                'Create Account',
+                'Join KneedYou',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 28,
+                  fontSize: 26,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Find your perfect match',
+                'Find who needs you',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withOpacity(0.75),
                   fontSize: 14,
                 ),
               ),
@@ -199,7 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           suffixIcon: IconButton(
             icon: Icon(
               _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: Colors.grey,
+              color: AppTheme.textMedium,
             ),
             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
           ),
@@ -213,24 +225,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return SizedBox(
       width: double.infinity,
       height: 54,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _register,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          elevation: 0,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: const LinearGradient(
+            colors: [AppTheme.primary, AppTheme.secondary],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withOpacity(0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-            : const Text(
-                'Create Account',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
+        child: ElevatedButton(
+          onPressed: _isLoading ? null : _register,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          ),
+          child: _isLoading
+              ? const SizedBox(width: 22, height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Create Account',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+        ),
       ),
     );
   }
@@ -238,15 +261,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildSocialDivider() {
     return Row(
       children: [
-        const Expanded(child: Divider(color: Color(0xFFDEDEDE), thickness: 1)),
+        const Expanded(child: Divider(color: AppTheme.surface2, thickness: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'or sign up with',
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-          ),
+          child: Text('or sign up with',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
         ),
-        const Expanded(child: Divider(color: Color(0xFFDEDEDE), thickness: 1)),
+        const Expanded(child: Divider(color: AppTheme.surface2, thickness: 1)),
       ],
     );
   }
@@ -268,7 +289,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onPressed: () => _handleSocialLogin('facebook'),
         ),
         CircleSocialButton(
-          icon: const FaIcon(FontAwesomeIcons.apple, size: 22, color: Colors.black),
+          icon: const FaIcon(FontAwesomeIcons.apple, size: 22, color: Colors.white),
           label: 'Apple',
           isLoading: _loadingProvider == 'apple',
           onPressed: () => _handleSocialLogin('apple'),
@@ -281,10 +302,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Center(
       child: GestureDetector(
         onTap: () => Navigator.pushReplacementNamed(context, '/login'),
-        child: RichText(
+        child: const RichText(
           text: TextSpan(
             text: 'Already have an account?  ',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+            style: TextStyle(color: AppTheme.textMedium, fontSize: 15),
             children: [
               TextSpan(
                 text: 'Sign In',

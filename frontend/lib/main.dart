@@ -52,7 +52,7 @@ class TinderCloneApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Tinder Clone',
+        title: 'KneedYou',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.theme,
         initialRoute: '/',

@@ -33,7 +33,7 @@ class StyledField extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF555555),
+            color: AppTheme.textMedium,
           ),
         ),
         const SizedBox(height: 8),
@@ -42,30 +42,30 @@ class StyledField extends StatelessWidget {
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
-          style: const TextStyle(fontSize: 15),
+          style: const TextStyle(fontSize: 15, color: AppTheme.textDark),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade400),
-            prefixIcon: Icon(icon, color: Colors.grey.shade500, size: 20),
+            hintStyle: const TextStyle(color: AppTheme.textLight),
+            prefixIcon: Icon(icon, color: AppTheme.textMedium, size: 20),
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppTheme.surface,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+              borderSide: const BorderSide(color: AppTheme.surface2),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+              borderSide: const BorderSide(color: AppTheme.surface2),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
+              borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: AppTheme.error),
+              borderSide: const BorderSide(color: AppTheme.error),
             ),
           ),
         ),
@@ -98,29 +98,23 @@ class CircleSocialButton extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.surface,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              border: Border.all(color: AppTheme.surface2, width: 1),
             ),
             child: isLoading
                 ? const Padding(
                     padding: EdgeInsets.all(18),
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
                   )
                 : Center(child: icon),
           ),
           const SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: AppTheme.textMedium,
               fontWeight: FontWeight.w500,
             ),
           ),
