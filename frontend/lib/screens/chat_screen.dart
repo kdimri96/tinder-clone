@@ -6,6 +6,7 @@ import '../providers/chat_provider.dart';
 import '../models/user_model.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/network_image_widget.dart';
+import '../widgets/report_dialog.dart';
 import '../utils/app_theme.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -119,9 +120,27 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppTheme.textMedium),
-            onPressed: () {},
+            color: AppTheme.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (value) {
+              if (value == 'report') {
+                showReportBottomSheet(context, widget.otherUser);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.flag_outlined, color: AppTheme.error, size: 18),
+                    SizedBox(width: 10),
+                    Text('Report / Block', style: TextStyle(color: AppTheme.textDark)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

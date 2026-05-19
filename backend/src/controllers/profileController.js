@@ -84,4 +84,19 @@ const deletePhoto = async (req, res) => {
   }
 };
 
-module.exports = { getProfile, updateProfile, uploadPhoto, deletePhoto };
+const updatePreferences = async (req, res) => {
+  try {
+    const { genderPreference, minAge, maxAge, maxDistance } = req.body;
+    const updates = {};
+    if (genderPreference) updates['preferences.genderPreference'] = genderPreference;
+    if (minAge !== undefined) updates['preferences.minAge'] = minAge;
+    if (maxAge !== undefined) updates['preferences.maxAge'] = maxAge;
+    if (maxDistance !== undefined) updates['preferences.maxDistance'] = maxDistance;
+    const user = await User.findByIdAndUpdate(req.userId, updates, { new: true });
+    res.json({ message: 'Preferences updated', user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getProfile, updateProfile, uploadPhoto, deletePhoto, updatePreferences };

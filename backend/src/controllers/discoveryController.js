@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Swipe = require('../models/Swipe');
+const Match = require('../models/Match');
 
 const getNearby = async (req, res) => {
   try {
@@ -17,6 +18,7 @@ const getNearby = async (req, res) => {
     const genderPrefs = user.preferences?.genderPreference || ['male', 'female', 'other'];
     const myGender = user.gender || 'other';
     const myInterests = user.interests || [];
+    const blockedUserIds = user.blockedUsers || [];
 
     const [longitude, latitude] = user.location?.coordinates || [0, 0];
 
@@ -31,7 +33,8 @@ const getNearby = async (req, res) => {
       },
       {
         $match: {
-          _id: { $ne: user._id, $nin: swipedIds },
+          _id: { $nin: [...swipedIds, ...blockedUserIds, user._id] },
+          blockedUsers: { $ne: user._id },
           // Matches the current user's gender preference
           gender: { $in: genderPrefs },
           // The candidate must also be interested in the current user's gender (mutual preference)
@@ -75,4 +78,29 @@ const getNearby = async (req, res) => {
   }
 };
 
-module.exports = { getNearby };
+const getLikedYou = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Users who swiped right on me, whom I haven't matched with yet
+    const matchedUserIds = await Match.find({ users: req.userId }).distinct('users');
+
+    const likedSwipes = await Swipe.find({
+      targetId: req.userId,
+      direction: { $in: ['like', 'superlike'] },
+      swiperId: { $nin: matchedUserIds },
+    })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('swiperId', 'name photos age bio job');
+
+    res.json({ users: likedSwipes.map(s => s.swiperId), total: likedSwipes.length });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getNearby, getLikedYou };

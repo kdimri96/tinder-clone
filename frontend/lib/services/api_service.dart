@@ -266,4 +266,32 @@ class ApiService {
     });
     return Map<String, dynamic>.from(response.data);
   }
+
+  // PREFERENCES
+  Future<UserModel> updatePreferences(Map<String, dynamic> prefs) async {
+    final response = await _dio.patch('/profile/preferences', data: prefs);
+    return UserModel.fromJson(response.data['user']);
+  }
+
+  // REWIND
+  Future<Map<String, dynamic>> rewindSwipe() async {
+    final response = await _dio.post('/swipe/rewind');
+    return Map<String, dynamic>.from(response.data);
+  }
+
+  // REPORT & BLOCK
+  Future<void> reportUser(String reportedId, String reason, {String details = ''}) async {
+    await _dio.post('/users/report', data: {'reportedId': reportedId, 'reason': reason, 'details': details});
+  }
+
+  Future<void> blockUser(String blockedId) async {
+    await _dio.post('/users/block', data: {'blockedId': blockedId});
+  }
+
+  // LIKED YOU
+  Future<List<UserModel>> getLikedYou({int page = 1}) async {
+    final response = await _dio.get('/discovery/liked-you', queryParameters: {'page': page, 'limit': 20});
+    final users = response.data['users'] as List;
+    return users.map((u) => UserModel.fromJson(u)).toList();
+  }
 }

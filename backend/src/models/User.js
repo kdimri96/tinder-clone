@@ -69,6 +69,7 @@ const userSchema = new mongoose.Schema({
   // Social auth
   provider: { type: String, enum: ['local', 'google', 'facebook', 'apple'], default: 'local' },
   providerId: { type: String, default: null },
+  blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   // Premium / monetisation
   isPremium: { type: Boolean, default: false },
   premiumExpiresAt: { type: Date, default: null },

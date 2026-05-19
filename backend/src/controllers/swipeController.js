@@ -63,4 +63,25 @@ const swipe = async (req, res) => {
   }
 };
 
-module.exports = { swipe };
+const rewind = async (req, res) => {
+  try {
+    const lastSwipe = await Swipe.findOne({ swiperId: req.userId })
+      .sort({ createdAt: -1 });
+    if (!lastSwipe) {
+      return res.status(404).json({ message: 'No swipe to rewind' });
+    }
+    // If it was a like that created a match, remove the match too
+    await Match.findOneAndDelete({
+      users: { $all: [req.userId, lastSwipe.targetId] },
+      createdAt: { $gte: new Date(lastSwipe.createdAt.getTime() - 2000) },
+    });
+    const targetUser = await User.findById(lastSwipe.targetId)
+      .select('name photos age bio job distance');
+    await lastSwipe.deleteOne();
+    res.json({ message: 'Swipe rewound', user: targetUser });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { swipe, rewind };

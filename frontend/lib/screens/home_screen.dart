@@ -5,6 +5,7 @@ import '../providers/match_provider.dart';
 import '../utils/app_theme.dart';
 import 'discovery_screen.dart';
 import 'matches_screen.dart';
+import 'liked_you_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = const [
     DiscoveryScreen(),
     MatchesScreen(),
+    LikedYouScreen(),
     ProfileScreen(),
   ];
 
@@ -49,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: AppTheme.surface,
           selectedItemColor: AppTheme.primary,
           unselectedItemColor: AppTheme.textLight,
+          type: BottomNavigationBarType.fixed,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.explore_outlined),
@@ -59,6 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.favorite_border),
               activeIcon: Icon(Icons.favorite),
               label: 'Matches',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.star_border_rounded),
+              activeIcon: Icon(Icons.star_rounded),
+              label: 'Likes',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),

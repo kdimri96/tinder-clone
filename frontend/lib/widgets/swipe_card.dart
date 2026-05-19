@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import 'network_image_widget.dart';
+import 'report_dialog.dart';
 
 class SwipeCard extends StatelessWidget {
   final UserModel user;
@@ -45,6 +46,28 @@ class SwipeCard extends StatelessWidget {
 
             // Like/Nope labels
             if (isTopCard && swipeProgress != null) _buildSwipeLabels(),
+
+            // More options button at top-right
+            Positioned(
+              top: 12,
+              right: 12,
+              child: GestureDetector(
+                onTap: () => showReportBottomSheet(context, user),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.more_vert,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
 
             // User info at bottom
             Positioned(

@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 const int _dailyLikeLimit = 10;
 const String _prefLikeCount = 'daily_like_count';
 const String _prefLikeDate = 'daily_like_date';
+const String _prefRewindDate = 'last_rewind_date';
 
 class DiscoveryProvider extends ChangeNotifier {
   final ApiService _api;
@@ -17,6 +18,7 @@ class DiscoveryProvider extends ChangeNotifier {
   String? _error;
   UserModel? _matchedUser;
   int _dailyLikesUsed = 0;
+  UserModel? _lastRewoundUser;
 
   DiscoveryProvider(this._api) {
     _loadDailyLikeCount();
@@ -57,6 +59,17 @@ class DiscoveryProvider extends ChangeNotifier {
   String _todayString() {
     final now = DateTime.now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<bool> hasUsedRewindToday() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastRewindDate = prefs.getString(_prefRewindDate) ?? '';
+    return lastRewindDate == _todayString();
+  }
+
+  Future<void> markRewindUsed() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefRewindDate, _todayString());
   }
 
   Future<void> loadUsers({double? latitude, double? longitude}) async {
@@ -135,6 +148,28 @@ class DiscoveryProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<bool> rewind() async {
+    try {
+      final data = await _api.rewindSwipe();
+      if (data['user'] != null) {
+        final user = UserModel.fromJson(data['user']);
+        _users.insert(0, user);
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void removeUserById(String userId) {
+    _removeUser(userId);
+    notifyListeners();
   }
 
   void clearMatch() {

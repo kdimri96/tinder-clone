@@ -35,6 +35,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     super.dispose();
   }
 
+  bool get _isPremium =>
+      context.read<PremiumProvider>().isPremium;
+
   bool get _hasUnlimitedLikes =>
       context.read<PremiumProvider>().isUnlimitedLikes;
 
@@ -110,6 +113,72 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           _matchedUser = matchedUser;
           _showMatchModal = true;
         });
+      }
+    }
+  }
+
+  Future<void> _handleRewind() async {
+    final provider = context.read<DiscoveryProvider>();
+    final isPremium = _isPremium;
+
+    if (!isPremium) {
+      // Check if free user already used rewind today
+      final usedToday = await provider.hasUsedRewindToday();
+      if (usedToday) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Expanded(
+                    child: Text('Upgrade to Gold for unlimited rewinds'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      Navigator.pushNamed(context, '/premium');
+                    },
+                    child: const Text('Upgrade',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFFFFAA00),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    final success = await provider.rewind();
+    if (mounted) {
+      if (success) {
+        if (!isPremium) {
+          await provider.markRewindUsed();
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Last swipe undone!'),
+            backgroundColor: AppTheme.surface,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Nothing to rewind'),
+            backgroundColor: AppTheme.surface,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     }
   }
@@ -253,6 +322,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               color: AppTheme.error,
               size: 56,
               onPressed: () => _controller.swipeLeft(),
+            ),
+            _ActionButton(
+              icon: Icons.replay_rounded,
+              color: const Color(0xFFFFAA00),
+              size: 46,
+              onPressed: _handleRewind,
             ),
             _ActionButton(
               icon: Icons.star,
