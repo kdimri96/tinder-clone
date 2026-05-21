@@ -1,5 +1,6 @@
-package com.example.tinder_clone
+package com.tinderclone.app
 
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity : FlutterActivity()
+
