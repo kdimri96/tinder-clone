@@ -1,7 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb, ChangeNotifier;
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier;
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
@@ -81,111 +78,21 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> loginWithGoogle() async {
-    try {
-      _error = null;
-      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
-      final account = await googleSignIn.signIn();
-      if (account == null) return false;
-
-      final auth = await account.authentication;
-      final idToken = auth.idToken;
-      if (idToken == null) throw Exception('Failed to get Google credentials');
-
-      final data = await _api.socialLogin(
-        provider: 'google',
-        token: idToken,
-        name: account.displayName,
-        email: account.email,
-      );
-      _user = UserModel.fromJson(data['user']);
-      _status = AuthStatus.authenticated;
-      final token = await _api.getStoredToken();
-      if (token != null) _socket.connect(token);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = _extractError(e);
-      notifyListeners();
-      return false;
-    }
+    _error = 'Google Sign-In coming soon';
+    notifyListeners();
+    return false;
   }
 
   Future<bool> loginWithFacebook() async {
-    try {
-      _error = null;
-      final result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile'],
-      );
-      if (result.status != LoginStatus.success) {
-        if (result.status == LoginStatus.cancelled) return false;
-        throw Exception(result.message ?? 'Facebook login failed');
-      }
-
-      final tokenString = result.accessToken?.tokenString;
-      if (tokenString == null) throw Exception('Failed to get Facebook token');
-
-      final userData = await FacebookAuth.instance.getUserData(
-        fields: 'name,email',
-      );
-
-      final data = await _api.socialLogin(
-        provider: 'facebook',
-        token: tokenString,
-        name: userData['name'] as String?,
-        email: userData['email'] as String?,
-      );
-      _user = UserModel.fromJson(data['user']);
-      _status = AuthStatus.authenticated;
-      final token = await _api.getStoredToken();
-      if (token != null) _socket.connect(token);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = _extractError(e);
-      notifyListeners();
-      return false;
-    }
+    _error = 'Facebook Sign-In coming soon';
+    notifyListeners();
+    return false;
   }
 
   Future<bool> loginWithApple() async {
-    if (kIsWeb) {
-      _error = 'Apple Sign-In is not supported on web';
-      notifyListeners();
-      return false;
-    }
-    try {
-      _error = null;
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      final identityToken = credential.identityToken;
-      if (identityToken == null) throw Exception('Failed to get Apple credentials');
-
-      final nameParts = [credential.givenName, credential.familyName]
-          .where((e) => e != null && e.isNotEmpty)
-          .join(' ');
-
-      final data = await _api.socialLogin(
-        provider: 'apple',
-        token: identityToken,
-        name: nameParts.isNotEmpty ? nameParts : null,
-        email: credential.email,
-      );
-      _user = UserModel.fromJson(data['user']);
-      _status = AuthStatus.authenticated;
-      final token = await _api.getStoredToken();
-      if (token != null) _socket.connect(token);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = _extractError(e);
-      notifyListeners();
-      return false;
-    }
+    _error = 'Apple Sign-In coming soon';
+    notifyListeners();
+    return false;
   }
 
   Future<void> logout() async {

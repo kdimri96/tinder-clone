@@ -26,6 +26,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final List<String> _uploadedPhotos = [];
 
   static const List<String> _genders = ['Man', 'Woman', 'Non-binary', 'Other'];
+  static const Map<String, String> _genderValues = {
+    'Man': 'male',
+    'Woman': 'female',
+    'Non-binary': 'other',
+    'Other': 'other',
+  };
   static const List<String> _allInterests = [
     'Travel', 'Music', 'Sports', 'Gaming', 'Cooking',
     'Reading', 'Art', 'Movies', 'Fitness', 'Photography',
@@ -76,7 +82,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       final api = context.read<ApiService>();
       final updatedUser = await api.updateProfile({
         'age': _age,
-        'gender': _gender!.toLowerCase(),
+        'gender': _genderValues[_gender!] ?? 'other',
         'bio': _bioController.text.trim(),
         'job': _jobController.text.trim(),
         'school': _schoolController.text.trim(),

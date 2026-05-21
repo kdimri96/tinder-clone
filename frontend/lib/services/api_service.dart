@@ -54,6 +54,8 @@ class ApiService {
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+        // Bypass ngrok browser warning page for API calls
+        options.headers['ngrok-skip-browser-warning'] = 'true';
         handler.next(options);
       },
       onError: (error, handler) async {

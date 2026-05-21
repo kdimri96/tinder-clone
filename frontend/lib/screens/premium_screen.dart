@@ -5,10 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/premium_provider.dart';
 import '../utils/app_theme.dart';
 
-// Razorpay is only available on mobile platforms
-// Import is conditional at runtime using kIsWeb guard
-// ignore: depend_on_referenced_packages
-import 'package:razorpay_flutter/razorpay_flutter.dart';
+// Razorpay disabled during testing
 
 class PremiumScreen extends StatefulWidget {
   const PremiumScreen({Key? key}) : super(key: key);
@@ -18,161 +15,25 @@ class PremiumScreen extends StatefulWidget {
 }
 
 class _PremiumScreenState extends State<PremiumScreen> {
-  Razorpay? _razorpay;
-
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb) {
-      _razorpay = Razorpay();
-      _razorpay!.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-      _razorpay!.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-      _razorpay!.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-    }
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PremiumProvider>().fetchPlans();
     });
   }
 
-  @override
-  void dispose() {
-    _razorpay?.clear();
-    super.dispose();
-  }
-
   Future<void> _purchasePlan(PlanModel plan) async {
-    if (kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Payments are available on iOS and Android apps only.'),
-          backgroundColor: AppTheme.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      return;
-    }
-
-    final provider = context.read<PremiumProvider>();
-    final orderData = await provider.createOrder(plan.id);
-    if (orderData == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(provider.error ?? 'Failed to create order'),
-            backgroundColor: AppTheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-      return;
-    }
-
-    final user = context.read<AuthProvider>().user;
-    final options = <String, dynamic>{
-      'key': orderData['keyId'],
-      'amount': orderData['amount'],
-      'currency': orderData['currency'] ?? 'INR',
-      'name': 'KneedYou',
-      'description': orderData['description'] ?? plan.description,
-      'order_id': orderData['orderId'],
-      'prefill': {
-        'contact': '',
-        'email': user?.email ?? '',
-      },
-      'theme': {'color': '#7B4DFF'},
-    };
-
-    _razorpay!.open(options);
-  }
-
-  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    final provider = context.read<PremiumProvider>();
-    final planId = provider.currentPlanId;
-    if (planId == null) return;
-
-    final success = await provider.verifyAndActivate(
-      orderId: response.orderId ?? '',
-      paymentId: response.paymentId ?? '',
-      signature: response.signature ?? '',
-      planId: planId,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Payments coming soon! Testing in progress.'),
+        backgroundColor: AppTheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
-
-    if (!mounted) return;
-    if (success) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, color: Colors.white, size: 36),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Payment Successful!',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textDark,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your plan is now active. Enjoy your premium features!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppTheme.textMedium),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 46),
-                ),
-                child: const Text('Awesome!'),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.error ?? 'Verification failed. Contact support.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) {
-    context.read<PremiumProvider>().setPurchasing(false);
-    if (!mounted) return;
-    if (response.code != Razorpay.PAYMENT_CANCELLED) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message ?? 'Payment failed. Please try again.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    context.read<PremiumProvider>().setPurchasing(false);
-  }
 
   @override
   Widget build(BuildContext context) {

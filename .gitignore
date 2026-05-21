@@ -47,3 +47,4 @@ keystore.properties
 
 # Uploads (user generated content)
 backend/uploads/
+frontend/android/key.properties
