@@ -197,6 +197,7 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
   }
 
   Widget _buildLockedView() {
+    final count = _users.length;
     return Stack(
       children: [
         // Blurred grid in background
@@ -262,19 +263,21 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
                   child: const Icon(Icons.favorite, color: Colors.white, size: 32),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'See Who Liked You',
-                  style: TextStyle(
+                Text(
+                  count > 0 ? '$count ${count == 1 ? 'person' : 'people'} liked you!' : 'See Who Liked You',
+                  style: const TextStyle(
                     color: AppTheme.textDark,
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Upgrade to Gold to see all the people who already liked your profile.',
+                Text(
+                  count > 0
+                      ? 'Upgrade to Gold to see who liked your profile and match with them.'
+                      : 'Upgrade to Gold to see all the people who already liked your profile.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.textMedium,
                     fontSize: 14,
                     height: 1.5,

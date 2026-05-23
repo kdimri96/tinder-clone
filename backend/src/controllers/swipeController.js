@@ -29,9 +29,14 @@ const swipe = async (req, res) => {
       { upsert: true, new: true }
     );
 
+    const io = req.app.get('io');
     let match = null;
 
     if (direction === 'like' || direction === 'superlike') {
+      // Notify target user that someone liked them (without revealing who)
+      if (io) {
+        io.to(targetId).emit('liked:you', { count: 1 });
+      }
       const mutualSwipe = await Swipe.findOne({
         swiperId: targetId,
         targetId: swiperId,
@@ -48,7 +53,6 @@ const swipe = async (req, res) => {
           match = await Match.create({ users: [swiperId, targetId] });
           await match.populate('users', 'name photos age');
 
-          const io = req.app.get('io');
           if (io) {
             io.to(swiperId).emit('match', { match });
             io.to(targetId).emit('match', { match });

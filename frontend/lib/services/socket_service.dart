@@ -8,6 +8,7 @@ typedef MessageCallback = void Function(MessageModel message);
 typedef MatchCallback = void Function(MatchModel match);
 typedef TypingCallback = void Function(String userId, bool isTyping);
 typedef PresenceCallback = void Function(String userId, bool isOnline);
+typedef LikedYouCallback = void Function();
 
 class SocketService {
   static String get _baseUrl => AppConfig.socketBaseUrl;
@@ -18,6 +19,7 @@ class SocketService {
   final List<MatchCallback> _matchListeners = [];
   final List<TypingCallback> _typingListeners = [];
   final List<PresenceCallback> _presenceListeners = [];
+  final List<LikedYouCallback> _likedYouListeners = [];
 
   bool get isConnected => _socket?.connected ?? false;
 
@@ -89,6 +91,12 @@ class SocketService {
         listener(data['userId'], false);
       }
     });
+
+    _socket!.on('liked:you', (_) {
+      for (final listener in _likedYouListeners) {
+        listener();
+      }
+    });
   }
 
   void disconnect() {
@@ -126,9 +134,11 @@ class SocketService {
   void onMatch(MatchCallback callback) => _matchListeners.add(callback);
   void onTyping(TypingCallback callback) => _typingListeners.add(callback);
   void onPresence(PresenceCallback callback) => _presenceListeners.add(callback);
+  void onLikedYou(LikedYouCallback callback) => _likedYouListeners.add(callback);
 
   void removeMessageListener(MessageCallback callback) => _messageListeners.remove(callback);
   void removeMatchListener(MatchCallback callback) => _matchListeners.remove(callback);
   void removeTypingListener(TypingCallback callback) => _typingListeners.remove(callback);
   void removePresenceListener(PresenceCallback callback) => _presenceListeners.remove(callback);
+  void removeLikedYouListener(LikedYouCallback callback) => _likedYouListeners.remove(callback);
 }
