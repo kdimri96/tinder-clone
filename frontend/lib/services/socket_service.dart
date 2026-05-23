@@ -6,9 +6,11 @@ import '../utils/app_config.dart';
 
 typedef MessageCallback = void Function(MessageModel message);
 typedef MatchCallback = void Function(MatchModel match);
-typedef TypingCallback = void Function(String userId, bool isTyping);
+// matchId included so ChatProvider can key typing status per-conversation
+typedef TypingCallback = void Function(String matchId, String userId, bool isTyping);
 typedef PresenceCallback = void Function(String userId, bool isOnline);
 typedef LikedYouCallback = void Function();
+typedef ChatNotificationCallback = void Function(String matchId, String senderName, String text);
 
 class SocketService {
   static String get _baseUrl => AppConfig.socketBaseUrl;
@@ -20,8 +22,13 @@ class SocketService {
   final List<TypingCallback> _typingListeners = [];
   final List<PresenceCallback> _presenceListeners = [];
   final List<LikedYouCallback> _likedYouListeners = [];
+  final List<ChatNotificationCallback> _chatNotificationListeners = [];
+
+  // Live online-status map so any widget can call isUserOnline() synchronously
+  final Map<String, bool> _onlineStatus = {};
 
   bool get isConnected => _socket?.connected ?? false;
+  bool isUserOnline(String userId) => _onlineStatus[userId] ?? false;
 
   void connect(String token) {
     _socket = IO.io(
@@ -69,26 +76,34 @@ class SocketService {
     });
 
     _socket!.on('typing:start', (data) {
+      final matchId = (data['matchId'] ?? '').toString();
+      final userId = (data['userId'] ?? '').toString();
       for (final listener in _typingListeners) {
-        listener(data['userId'], true);
+        listener(matchId, userId, true);
       }
     });
 
     _socket!.on('typing:stop', (data) {
+      final matchId = (data['matchId'] ?? '').toString();
+      final userId = (data['userId'] ?? '').toString();
       for (final listener in _typingListeners) {
-        listener(data['userId'], false);
+        listener(matchId, userId, false);
       }
     });
 
     _socket!.on('presence:online', (data) {
+      final userId = (data['userId'] ?? '').toString();
+      _onlineStatus[userId] = true;
       for (final listener in _presenceListeners) {
-        listener(data['userId'], true);
+        listener(userId, true);
       }
     });
 
     _socket!.on('presence:offline', (data) {
+      final userId = (data['userId'] ?? '').toString();
+      _onlineStatus[userId] = false;
       for (final listener in _presenceListeners) {
-        listener(data['userId'], false);
+        listener(userId, false);
       }
     });
 
@@ -97,15 +112,28 @@ class SocketService {
         listener();
       }
     });
+
+    _socket!.on('chat:notification', (data) {
+      for (final listener in _chatNotificationListeners) {
+        listener(
+          (data['matchId'] ?? '').toString(),
+          (data['senderName'] ?? 'Someone').toString(),
+          (data['text'] ?? 'New message').toString(),
+        );
+      }
+    });
   }
 
   void disconnect() {
     _socket?.disconnect();
     _socket = null;
+    _onlineStatus.clear();
   }
 
-  void sendMessage(String matchId, String text, {Function(dynamic)? onSuccess, Function(dynamic)? onError}) {
-    _socket?.emitWithAck('chat:send', {'matchId': matchId, 'text': text}, ack: (response) {
+  void sendMessage(String matchId, String text,
+      {Function(dynamic)? onSuccess, Function(dynamic)? onError}) {
+    _socket?.emitWithAck('chat:send', {'matchId': matchId, 'text': text},
+        ack: (response) {
       if (response['success'] == true) {
         onSuccess?.call(response);
       } else {
@@ -135,10 +163,19 @@ class SocketService {
   void onTyping(TypingCallback callback) => _typingListeners.add(callback);
   void onPresence(PresenceCallback callback) => _presenceListeners.add(callback);
   void onLikedYou(LikedYouCallback callback) => _likedYouListeners.add(callback);
+  void onChatNotification(ChatNotificationCallback callback) =>
+      _chatNotificationListeners.add(callback);
 
-  void removeMessageListener(MessageCallback callback) => _messageListeners.remove(callback);
-  void removeMatchListener(MatchCallback callback) => _matchListeners.remove(callback);
-  void removeTypingListener(TypingCallback callback) => _typingListeners.remove(callback);
-  void removePresenceListener(PresenceCallback callback) => _presenceListeners.remove(callback);
-  void removeLikedYouListener(LikedYouCallback callback) => _likedYouListeners.remove(callback);
+  void removeMessageListener(MessageCallback callback) =>
+      _messageListeners.remove(callback);
+  void removeMatchListener(MatchCallback callback) =>
+      _matchListeners.remove(callback);
+  void removeTypingListener(TypingCallback callback) =>
+      _typingListeners.remove(callback);
+  void removePresenceListener(PresenceCallback callback) =>
+      _presenceListeners.remove(callback);
+  void removeLikedYouListener(LikedYouCallback callback) =>
+      _likedYouListeners.remove(callback);
+  void removeChatNotificationListener(ChatNotificationCallback callback) =>
+      _chatNotificationListeners.remove(callback);
 }

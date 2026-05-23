@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/message_model.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
@@ -9,8 +11,15 @@ class ChatProvider extends ChangeNotifier {
 
   final Map<String, List<MessageModel>> _messages = {};
   final Map<String, bool> _typingStatus = {};
+  final Map<String, Timer> _typingTimers = {};
   bool _isLoading = false;
   String? _error;
+
+  // Tracks which chat the user currently has open so HomeScreen can suppress
+  // duplicate notifications for the same conversation.
+  String? _activeChatMatchId;
+  String? get activeChatMatchId => _activeChatMatchId;
+  void setActiveChat(String? matchId) => _activeChatMatchId = matchId;
 
   ChatProvider(this._api, this._socket) {
     _socket.onMessage(_onMessage);
@@ -23,8 +32,6 @@ class ChatProvider extends ChangeNotifier {
   String? get error => _error;
 
   Future<void> loadMessages(String matchId) async {
-    if (_messages.containsKey(matchId) && _messages[matchId]!.isNotEmpty) return;
-
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -56,7 +63,6 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> sendMessage(String matchId, String text) async {
-    // Optimistic update
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final optimistic = MessageModel(
       id: tempId,
@@ -73,13 +79,39 @@ class ChatProvider extends ChangeNotifier {
 
     try {
       final sent = await _api.sendMessage(matchId, text);
-      // Replace optimistic message with real one
       final msgs = _messages[matchId]!;
       final idx = msgs.indexWhere((m) => m.id == tempId);
       if (idx >= 0) msgs[idx] = sent;
       notifyListeners();
     } catch (e) {
-      // Remove optimistic on failure
+      _messages[matchId]!.removeWhere((m) => m.id == tempId);
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> sendPhoto(String matchId, XFile file) async {
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final optimistic = MessageModel(
+      id: tempId,
+      matchId: matchId,
+      senderId: 'me',
+      text: '📷 Photo',
+      createdAt: DateTime.now(),
+      readBy: ['me'],
+    );
+
+    _messages[matchId] ??= [];
+    _messages[matchId]!.add(optimistic);
+    notifyListeners();
+
+    try {
+      final sent = await _api.sendPhotoMessage(matchId, file);
+      final msgs = _messages[matchId]!;
+      final idx = msgs.indexWhere((m) => m.id == tempId);
+      if (idx >= 0) msgs[idx] = sent;
+      notifyListeners();
+    } catch (e) {
       _messages[matchId]!.removeWhere((m) => m.id == tempId);
       _error = e.toString();
       notifyListeners();
@@ -91,7 +123,6 @@ class ChatProvider extends ChangeNotifier {
 
   void _onMessage(MessageModel message) {
     _messages[message.matchId] ??= [];
-    // Avoid duplicate from socket if REST already added it
     if (!_messages[message.matchId]!.any((m) => m.id == message.id)) {
       _messages[message.matchId]!.add(message);
       _socket.markRead(message.matchId);
@@ -99,13 +130,28 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  void _onTyping(String userId, bool isTyping) {
-    // This is a simplified version; in production you'd key by matchId+userId
+  void _onTyping(String matchId, String userId, bool typing) {
+    // Cancel any previous auto-clear for this conversation
+    _typingTimers[matchId]?.cancel();
+
+    if (typing) {
+      _typingStatus[matchId] = true;
+      // Auto-clear after 4 s in case stop event is missed
+      _typingTimers[matchId] = Timer(const Duration(seconds: 4), () {
+        _typingStatus[matchId] = false;
+        notifyListeners();
+      });
+    } else {
+      _typingStatus[matchId] = false;
+    }
     notifyListeners();
   }
 
   @override
   void dispose() {
+    for (final t in _typingTimers.values) {
+      t.cancel();
+    }
     _socket.removeMessageListener(_onMessage);
     _socket.removeTypingListener(_onTyping);
     super.dispose();

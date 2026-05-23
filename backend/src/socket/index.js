@@ -69,6 +69,19 @@ const setupSocket = (io) => {
         await message.populate('senderId', 'name photos');
 
         io.to(matchId).emit('chat:message', { message });
+
+        // Personal notification to the other user so HomeScreen can show a banner
+        const otherUserId = match.users
+          .map((u) => u.toString())
+          .find((id) => id !== userId);
+        if (otherUserId) {
+          io.to(otherUserId).emit('chat:notification', {
+            matchId,
+            senderName: socket.user?.name || 'Someone',
+            text: message.mediaUrl ? '📷 Photo' : text,
+          });
+        }
+
         callback?.({ success: true, message });
       } catch (error) {
         callback?.({ error: error.message });

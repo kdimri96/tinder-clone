@@ -253,6 +253,15 @@ class ApiService {
     return MessageModel.fromJson(response.data['message']);
   }
 
+  Future<MessageModel> sendPhotoMessage(String matchId, XFile file) async {
+    final bytes = await file.readAsBytes();
+    final formData = FormData.fromMap({
+      'photo': MultipartFile.fromBytes(bytes, filename: file.name),
+    });
+    final response = await _dio.post('/messages/$matchId/photo', data: formData);
+    return MessageModel.fromJson(response.data['message']);
+  }
+
   Future<String?> getStoredToken() async {
     return _readKey('access_token');
   }

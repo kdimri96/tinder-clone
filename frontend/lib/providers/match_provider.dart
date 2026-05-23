@@ -12,6 +12,15 @@ class MatchProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
+  // Badge count for the Matches tab — incremented by socket events, cleared
+  // when the user opens the Matches tab.
+  int _newNotificationsCount = 0;
+
+  // The most recent match that arrived via socket (used by HomeScreen to show
+  // the "You matched!" snackbar). Compared by ID so reference changes don't
+  // produce duplicate snackbars after an API reload.
+  MatchModel? _lastNewMatch;
+
   MatchProvider(this._api, this._socket) {
     _socket.onMatch(_onNewMatch);
     _socket.onMessage(_onNewMessage);
@@ -20,7 +29,16 @@ class MatchProvider extends ChangeNotifier {
   List<MatchModel> get matches => _matches;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  int get unreadCount => 0; // simplified
+  int get newNotificationsCount => _newNotificationsCount;
+  MatchModel? get lastNewMatch => _lastNewMatch;
+
+  void clearNewNotifications() {
+    if (_newNotificationsCount == 0 && _lastNewMatch == null) return;
+    _newNotificationsCount = 0;
+    // Keep _lastNewMatch so the snackbar identity check in HomeScreen works;
+    // HomeScreen resets _lastShownMatchId on its own.
+    notifyListeners();
+  }
 
   Future<void> loadMatches() async {
     _isLoading = true;
@@ -37,17 +55,46 @@ class MatchProvider extends ChangeNotifier {
     }
   }
 
-  void _onNewMatch(MatchModel match) {
-    _matches.insert(0, match);
+  // Called when a `match` socket event arrives.
+  // The socket payload only contains `users[]` but no `otherUser`, so we
+  // reload from the REST API to get the fully-populated data instead of
+  // trying to render the socket model directly.
+  void _onNewMatch(MatchModel socketMatch) async {
+    _newNotificationsCount++;
+    // Join the new room immediately so messages are received in real-time
+    _socket.joinMatchRoom(socketMatch.id);
+    notifyListeners(); // update badge right away
+
+    try {
+      final fresh = await _api.getMatches();
+      _matches = fresh;
+      // After reload, the newest match is first (sorted by lastMessageAt/createdAt desc)
+      if (_matches.isNotEmpty) {
+        _lastNewMatch = _matches.first;
+      }
+    } catch (_) {
+      // Fallback: insert raw socket match (otherUser may be null — tile won't render
+      // but the count/snackbar still works once the user refreshes)
+      if (!_matches.any((m) => m.id == socketMatch.id)) {
+        _matches.insert(0, socketMatch);
+      }
+      _lastNewMatch = socketMatch;
+    }
     notifyListeners();
   }
 
+  // Called when a `chat:message` socket event arrives.
+  // Updates the preview text and bubbles that conversation to the top.
   void _onNewMessage(MessageModel message) {
     final idx = _matches.indexWhere((m) => m.id == message.matchId);
     if (idx >= 0) {
-      // Move match with new message to top
       final match = _matches.removeAt(idx);
-      _matches.insert(0, match);
+      final updated = match.copyWith(
+        lastMessage: message,
+        lastMessageAt: message.createdAt,
+      );
+      _matches.insert(0, updated);
+      _newNotificationsCount++;
       notifyListeners();
     }
   }

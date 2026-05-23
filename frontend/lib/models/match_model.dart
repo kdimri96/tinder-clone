@@ -18,6 +18,17 @@ class MatchModel {
     this.lastMessageAt,
   });
 
+  MatchModel copyWith({MessageModel? lastMessage, DateTime? lastMessageAt}) {
+    return MatchModel(
+      id: id,
+      users: users,
+      otherUser: otherUser,
+      lastMessage: lastMessage ?? this.lastMessage,
+      createdAt: createdAt,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+    );
+  }
+
   factory MatchModel.fromJson(Map<String, dynamic> json) {
     final usersList = (json['users'] as List?)
         ?.map((u) => UserModel.fromJson(u))

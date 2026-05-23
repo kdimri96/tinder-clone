@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../models/user_model.dart';
+import '../services/socket_service.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/network_image_widget.dart';
 import '../widgets/report_dialog.dart';
@@ -28,22 +30,42 @@ class _ChatScreenState extends State<ChatScreen> {
   final _scrollController = ScrollController();
   Timer? _typingTimer;
   bool _isTyping = false;
+  bool _isOtherUserOnline = false;
 
   @override
   void initState() {
     super.initState();
+    // Tell HomeScreen this conversation is active so it suppresses duplicate
+    // message notifications for this chat.
+    context.read<ChatProvider>().setActiveChat(widget.matchId);
+
+    // Initialise online status from the socket's in-memory map (covers the
+    // case where presence:online fired before this screen was opened).
+    _isOtherUserOnline = widget.otherUser.isOnline ||
+        context.read<SocketService>().isUserOnline(widget.otherUser.id);
+
+    context.read<SocketService>().onPresence(_onPresence);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Always reload so real-time messages since last open are fetched.
       context.read<ChatProvider>().loadMessages(widget.matchId);
     });
   }
 
   @override
   void dispose() {
+    context.read<ChatProvider>().setActiveChat(null);
+    context.read<SocketService>().removePresenceListener(_onPresence);
     _textController.dispose();
     _scrollController.dispose();
     _typingTimer?.cancel();
     context.read<ChatProvider>().stopTyping(widget.matchId);
     super.dispose();
+  }
+
+  void _onPresence(String userId, bool isOnline) {
+    if (!mounted || userId != widget.otherUser.id) return;
+    setState(() => _isOtherUserOnline = isOnline);
   }
 
   void _onTypingChanged(String text) {
@@ -70,14 +92,25 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
   }
 
+  Future<void> _sendPhoto() async {
+    final picker = ImagePicker();
+    final picked =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (picked == null || !mounted) return;
+    await context.read<ChatProvider>().sendPhoto(widget.matchId, picked);
+    _scrollToBottom();
+  }
+
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -103,7 +136,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       width: 40,
                       height: 40,
                       color: AppTheme.surface2,
-                      child: const Icon(Icons.person, color: AppTheme.textMedium),
+                      child:
+                          const Icon(Icons.person, color: AppTheme.textMedium),
                     ),
             ),
             const SizedBox(width: 10),
@@ -111,10 +145,32 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(widget.otherUser.name,
-                    style: const TextStyle(fontSize: 16, color: AppTheme.textDark)),
-                if (widget.otherUser.isOnline)
-                  Text('Online',
-                      style: TextStyle(color: AppTheme.success, fontSize: 12)),
+                    style: const TextStyle(
+                        fontSize: 16, color: AppTheme.textDark)),
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _isOtherUserOnline
+                            ? AppTheme.success
+                            : AppTheme.textLight,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _isOtherUserOnline ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        color: _isOtherUserOnline
+                            ? AppTheme.success
+                            : AppTheme.textLight,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ],
@@ -123,7 +179,8 @@ class _ChatScreenState extends State<ChatScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppTheme.textMedium),
             color: AppTheme.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) {
               if (value == 'report') {
                 showReportBottomSheet(context, widget.otherUser);
@@ -136,7 +193,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Icon(Icons.flag_outlined, color: AppTheme.error, size: 18),
                     SizedBox(width: 10),
-                    Text('Report / Block', style: TextStyle(color: AppTheme.textDark)),
+                    Text('Report / Block',
+                        style: TextStyle(color: AppTheme.textDark)),
                   ],
                 ),
               ),
@@ -144,8 +202,12 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
+      // resizeToAvoidBottomInset pushes the whole Column up when the keyboard
+      // appears so the input bar is always visible above it.
+      resizeToAvoidBottomInset: true,
       body: Column(
         children: [
+          // Message list
           Expanded(
             child: Consumer<ChatProvider>(
               builder: (context, chat, _) {
@@ -163,13 +225,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         Container(
                           width: 80,
                           height: 80,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: const LinearGradient(
+                            gradient: LinearGradient(
                               colors: [AppTheme.primary, AppTheme.secondary],
                             ),
                           ),
-                          child: const Icon(Icons.favorite, color: Colors.white, size: 36),
+                          child: const Icon(Icons.favorite,
+                              color: Colors.white, size: 36),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -189,7 +252,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   );
                 }
 
-                WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                // Scroll to bottom whenever messages change
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _scrollToBottom());
 
                 return ListView.builder(
                   controller: _scrollController,
@@ -197,12 +262,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[index];
-                    final isMine = msg.senderId == myId || msg.senderId == 'me';
+                    final isMine =
+                        msg.senderId == myId || msg.senderId == 'me';
                     final showTime = index == messages.length - 1 ||
                         messages[index + 1]
-                            .createdAt
-                            .difference(msg.createdAt)
-                            .inMinutes >
+                                .createdAt
+                                .difference(msg.createdAt)
+                                .inMinutes >
                             5;
                     return MessageBubble(
                         message: msg, isMine: isMine, showTime: showTime);
@@ -217,11 +283,14 @@ class _ChatScreenState extends State<ChatScreen> {
             builder: (context, chat, _) {
               if (!chat.isTyping(widget.matchId)) return const SizedBox();
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
                   children: [
+                    _TypingDots(),
+                    const SizedBox(width: 8),
                     Text(
-                      '${widget.otherUser.name} is typing...',
+                      '${widget.otherUser.name} is typing',
                       style: const TextStyle(
                           color: AppTheme.textLight,
                           fontSize: 13,
@@ -233,27 +302,45 @@ class _ChatScreenState extends State<ChatScreen> {
             },
           ),
 
-          // Input bar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          // Input bar — SafeArea bottom so it clears the Android nav bar
+          SafeArea(
+            top: false,
+            child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             decoration: const BoxDecoration(
               color: AppTheme.surface,
               border: Border(top: BorderSide(color: AppTheme.surface2)),
             ),
             child: Row(
               children: [
+                GestureDetector(
+                  onTap: _sendPhoto,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.surface2,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.image_outlined,
+                        color: AppTheme.textMedium, size: 20),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: _textController,
                     onChanged: _onTypingChanged,
                     maxLines: 4,
                     minLines: 1,
-                    style: const TextStyle(color: AppTheme.textDark, fontSize: 15),
+                    style: const TextStyle(
+                        color: AppTheme.textDark, fontSize: 15),
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
-                      hintStyle: const TextStyle(color: AppTheme.textLight),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      hintStyle:
+                          const TextStyle(color: AppTheme.textLight),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                       filled: true,
                       fillColor: AppTheme.surface2,
                       border: OutlineInputBorder(
@@ -266,7 +353,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+                        borderSide: const BorderSide(
+                            color: AppTheme.primary, width: 1.5),
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
@@ -282,14 +370,69 @@ class _ChatScreenState extends State<ChatScreen> {
                       gradient: AppTheme.primaryGradient,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                    child: const Icon(Icons.send_rounded,
+                        color: Colors.white, size: 20),
                   ),
                 ),
               ],
             ),
           ),
+          ), // SafeArea
         ],
       ),
+    );
+  }
+}
+
+// Three-dot animated typing indicator
+class _TypingDots extends StatefulWidget {
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900))
+      ..repeat();
+    _anim = Tween(begin: 0.0, end: 1.0).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final phase = (_anim.value - i * 0.2).clamp(0.0, 1.0);
+            final opacity = (phase < 0.5 ? phase * 2 : (1 - phase) * 2)
+                .clamp(0.3, 1.0);
+            return Container(
+              width: 5,
+              height: 5,
+              margin: const EdgeInsets.symmetric(horizontal: 1.5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.textLight.withOpacity(opacity),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }
