@@ -266,6 +266,28 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
 
               return Column(
                 children: [
+                  if (provider.expandedSearch)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      color: AppTheme.primary.withOpacity(0.12),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.explore_outlined, size: 16, color: AppTheme.primary),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'No one nearby — showing profiles from further away',
+                              style: TextStyle(
+                                color: AppTheme.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(16),

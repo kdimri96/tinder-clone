@@ -1,5 +1,6 @@
 const Match = require('../models/Match');
 const Message = require('../models/Message');
+const { parseError } = require('../utils/errorHandler');
 
 const getMatches = async (req, res) => {
   try {
@@ -11,7 +12,6 @@ const getMatches = async (req, res) => {
       .populate('lastMessage')
       .sort({ lastMessageAt: -1, createdAt: -1 });
 
-    // Format matches to show the other user's info
     const formatted = matches.map((match) => {
       const matchObj = match.toObject();
       matchObj.otherUser = matchObj.users.find(
@@ -22,7 +22,7 @@ const getMatches = async (req, res) => {
 
     res.json({ matches: formatted });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: parseError(error) });
   }
 };
 
@@ -34,7 +34,7 @@ const getMatch = async (req, res) => {
     }).populate('users', 'name photos age bio job school interests lastActive');
 
     if (!match) {
-      return res.status(404).json({ message: 'Match not found' });
+      return res.status(404).json({ message: 'Match not found or you do not have access to it.' });
     }
 
     const matchObj = match.toObject();
@@ -44,7 +44,7 @@ const getMatch = async (req, res) => {
 
     res.json({ match: matchObj });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: parseError(error) });
   }
 };
 
@@ -56,15 +56,15 @@ const unmatch = async (req, res) => {
     });
 
     if (!match) {
-      return res.status(404).json({ message: 'Match not found' });
+      return res.status(404).json({ message: 'Match not found or already removed.' });
     }
 
     match.unmatchedBy = req.userId;
     await match.save();
 
-    res.json({ message: 'Unmatched successfully' });
+    res.json({ message: 'Unmatched successfully.' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: parseError(error) });
   }
 };
 

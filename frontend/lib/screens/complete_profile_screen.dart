@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../utils/api_error.dart';
 import '../utils/app_theme.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
@@ -69,10 +70,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       setState(() => _uploadedPhotos.addAll(
         updatedUser.photos.where((p) => !_uploadedPhotos.contains(p)),
       ));
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to upload photo')),
+          SnackBar(content: Text(extractApiError(e)), backgroundColor: AppTheme.error),
         );
       }
     } finally {
@@ -107,8 +108,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         context.read<AuthProvider>().updateUser(updatedUser);
         Navigator.pushReplacementNamed(context, '/home');
       }
-    } catch (_) {
-      if (mounted) _showError('Failed to save profile. Try again.');
+    } catch (e) {
+      if (mounted) _showError(extractApiError(e));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

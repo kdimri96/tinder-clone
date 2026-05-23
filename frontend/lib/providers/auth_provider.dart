@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
+import '../utils/api_error.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -54,7 +55,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = _extractError(e);
+      _error = extractApiError(e);
       notifyListeners();
       return false;
     }
@@ -71,7 +72,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = _extractError(e);
+      _error = extractApiError(e);
       notifyListeners();
       return false;
     }
@@ -106,17 +107,5 @@ class AuthProvider extends ChangeNotifier {
   void updateUser(UserModel user) {
     _user = user;
     notifyListeners();
-  }
-
-  String _extractError(dynamic e) {
-    if (e is Exception) {
-      final msg = e.toString();
-      if (msg.contains('message')) {
-        final match = RegExp(r'"message":"([^"]+)"').firstMatch(msg);
-        return match?.group(1) ?? 'Something went wrong';
-      }
-      return msg.replaceAll('Exception:', '').trim();
-    }
-    return 'Something went wrong';
   }
 }

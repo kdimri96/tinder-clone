@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
+import '../utils/api_error.dart';
 
 const int _dailyLikeLimit = 10;
 const String _prefLikeCount = 'daily_like_count';
@@ -18,6 +19,7 @@ class DiscoveryProvider extends ChangeNotifier {
   String? _error;
   UserModel? _matchedUser;
   int _dailyLikesUsed = 0;
+  bool _expandedSearch = false;
 
   DiscoveryProvider(this._api) {
     _loadDailyLikeCount();
@@ -31,6 +33,7 @@ class DiscoveryProvider extends ChangeNotifier {
   int get dailyLikesUsed => _dailyLikesUsed;
   int get dailyLikesRemaining => (_dailyLikeLimit - _dailyLikesUsed).clamp(0, _dailyLikeLimit);
   bool get hasLikesLeft => _dailyLikesUsed < _dailyLikeLimit;
+  bool get expandedSearch => _expandedSearch;
 
   Future<void> _loadDailyLikeCount() async {
     final prefs = await SharedPreferences.getInstance();
@@ -78,17 +81,19 @@ class DiscoveryProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final newUsers = await _api.getNearby(
+      final result = await _api.getNearby(
         latitude: latitude,
         longitude: longitude,
         page: _page,
         limit: 10,
       );
+      final newUsers = result['users'] as List<UserModel>;
+      _expandedSearch = result['expandedSearch'] as bool;
       _users.addAll(newUsers);
       _hasMore = newUsers.length == 10;
       _page++;
     } catch (e) {
-      _error = e.toString();
+      _error = extractApiError(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -114,7 +119,7 @@ class DiscoveryProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = e.toString();
+      _error = extractApiError(e);
       notifyListeners();
       return false;
     }
@@ -126,7 +131,7 @@ class DiscoveryProvider extends ChangeNotifier {
       _removeUser(targetId);
       notifyListeners();
     } catch (e) {
-      _error = e.toString();
+      _error = extractApiError(e);
     }
   }
 
@@ -143,7 +148,7 @@ class DiscoveryProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = e.toString();
+      _error = extractApiError(e);
       notifyListeners();
       return false;
     }
@@ -160,7 +165,7 @@ class DiscoveryProvider extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      _error = e.toString();
+      _error = extractApiError(e);
       notifyListeners();
       return false;
     }
@@ -186,6 +191,7 @@ class DiscoveryProvider extends ChangeNotifier {
     _hasMore = true;
     _error = null;
     _matchedUser = null;
+    _expandedSearch = false;
     await _loadDailyLikeCount();
     notifyListeners();
   }

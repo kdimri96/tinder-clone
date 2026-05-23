@@ -192,7 +192,7 @@ class ApiService {
   }
 
   // DISCOVERY
-  Future<List<UserModel>> getNearby({
+  Future<Map<String, dynamic>> getNearby({
     double? latitude,
     double? longitude,
     int page = 1,
@@ -203,8 +203,11 @@ class ApiService {
     if (longitude != null) queryParams['longitude'] = longitude;
 
     final response = await _dio.get('/discovery/nearby', queryParameters: queryParams);
-    final users = response.data['users'] as List;
-    return users.map((u) => UserModel.fromJson(u)).toList();
+    final users = (response.data['users'] as List).map((u) => UserModel.fromJson(u)).toList();
+    return {
+      'users': users,
+      'expandedSearch': response.data['expandedSearch'] ?? false,
+    };
   }
 
   // SWIPE
