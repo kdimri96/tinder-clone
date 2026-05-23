@@ -26,7 +26,7 @@ const PLANS = {
   premium_monthly: {
     amount: 49900,       // ₹499
     currency: 'INR',
-    description: 'Tinder Gold — 30 days (Unlimited Likes + Boost)',
+    description: 'KneedYou Gold — 30 days (Unlimited Likes + Boost)',
     durationDays: 30,
     feature: 'premium',
   },

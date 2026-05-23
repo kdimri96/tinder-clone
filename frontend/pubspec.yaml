@@ -1,5 +1,5 @@
-name: tinder_clone
-description: A Tinder-like dating app built with Flutter
+name: kneedyou
+description: KneedYou — A dating app built with Flutter
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -46,7 +46,8 @@ dependencies:
   # Utils
   intl: ^0.18.1
   timeago: ^3.6.0
-  # geolocator: ^10.1.0
+  geolocator: ^10.1.0
+  permission_handler: ^11.0.0
 
 dev_dependencies:
   flutter_test:

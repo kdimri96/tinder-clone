@@ -129,7 +129,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Tinder Gold',
+                  'KneedYou Gold',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 28,

@@ -5,6 +5,8 @@ import '../providers/auth_provider.dart';
 import '../providers/discovery_provider.dart';
 import '../providers/premium_provider.dart';
 import '../models/user_model.dart';
+import '../services/api_service.dart';
+import '../services/location_service.dart';
 import '../widgets/swipe_card.dart';
 import '../widgets/match_modal.dart';
 import '../utils/app_theme.dart';
@@ -25,8 +27,15 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DiscoveryProvider>().loadUsers();
+      _initLocationAndLoad();
     });
+  }
+
+  Future<void> _initLocationAndLoad() async {
+    final api = context.read<ApiService>();
+    final discovery = context.read<DiscoveryProvider>();
+    await LocationService.updateUserLocation(api);
+    if (mounted) discovery.loadUsers();
   }
 
   @override

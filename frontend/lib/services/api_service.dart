@@ -132,7 +132,14 @@ class ApiService {
       'password': password,
     });
     await _saveTokens(response.data);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('saved_email', email);
     return response.data;
+  }
+
+  Future<String?> getSavedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('saved_email');
   }
 
   Future<void> logout() async {
@@ -163,6 +170,10 @@ class ApiService {
   Future<UserModel> updateProfile(Map<String, dynamic> updates) async {
     final response = await _dio.patch('/profile', data: updates);
     return UserModel.fromJson(response.data['user']);
+  }
+
+  Future<void> updateLocation(double latitude, double longitude) async {
+    await _dio.patch('/profile', data: {'latitude': latitude, 'longitude': longitude});
   }
 
   // Accepts XFile (works on all platforms including web)

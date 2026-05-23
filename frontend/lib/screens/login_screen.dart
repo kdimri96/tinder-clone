@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/auth_widgets.dart';
 
@@ -19,6 +20,19 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _loadingProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedEmail();
+  }
+
+  Future<void> _loadSavedEmail() async {
+    final email = await ApiService().getSavedEmail();
+    if (email != null && mounted) {
+      setState(() => _emailController.text = email);
+    }
+  }
 
   @override
   void dispose() {

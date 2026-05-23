@@ -22,11 +22,11 @@ import 'utils/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const TinderCloneApp());
+  runApp(const KneedYouApp());
 }
 
-class TinderCloneApp extends StatelessWidget {
-  const TinderCloneApp({Key? key}) : super(key: key);
+class KneedYouApp extends StatelessWidget {
+  const KneedYouApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

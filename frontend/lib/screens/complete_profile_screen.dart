@@ -22,6 +22,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final _schoolController = TextEditingController();
   int? _age;
   String? _gender;
+  RangeValues _agePreference = const RangeValues(18, 40);
   final List<String> _selectedInterests = [];
   final List<String> _uploadedPhotos = [];
 
@@ -31,6 +32,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     'Woman': 'female',
     'Non-binary': 'other',
     'Other': 'other',
+  };
+
+  String? _interestedIn; // 'Women', 'Men', 'Everyone'
+  static const Map<String, List<String>> _preferenceValues = {
+    'Women': ['female'],
+    'Men': ['male'],
+    'Everyone': ['male', 'female', 'other'],
   };
   static const List<String> _allInterests = [
     'Travel', 'Music', 'Sports', 'Gaming', 'Cooking',
@@ -75,6 +83,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   Future<void> _saveAndFinish() async {
     if (_age == null) { _showError('Please enter your age'); return; }
     if (_gender == null) { _showError('Please select your gender'); return; }
+    if (_interestedIn == null) { _showError('Please select who you are interested in'); return; }
     if (_uploadedPhotos.isEmpty) { _showError('Please add at least one photo'); return; }
 
     setState(() => _isSaving = true);
@@ -87,6 +96,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         'job': _jobController.text.trim(),
         'school': _schoolController.text.trim(),
         'interests': _selectedInterests,
+        'preferences': {
+          'genderPreference': _preferenceValues[_interestedIn!] ?? ['male', 'female', 'other'],
+          'minAge': _agePreference.start.round(),
+          'maxAge': _agePreference.end.round(),
+        },
         'isProfileComplete': true,
       });
       if (mounted) {
@@ -107,8 +121,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage == 0 && (_age == null || _gender == null)) {
-      _showError('Please fill in your age and gender');
+    if (_currentPage == 0 && (_age == null || _gender == null || _interestedIn == null)) {
+      _showError('Please fill in your age, gender and preference');
       return;
     }
     if (_currentPage < 2) {
@@ -282,6 +296,89 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 ),
               );
             }).toList(),
+          ),
+          const SizedBox(height: 24),
+          _SectionLabel(label: 'I am interested in'),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: ['Women', 'Men', 'Everyone'].map((option) {
+              final selected = _interestedIn == option;
+              return GestureDetector(
+                onTap: () => setState(() => _interestedIn = option),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: selected
+                        ? const LinearGradient(
+                            colors: [AppTheme.primary, AppTheme.secondary],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          )
+                        : null,
+                    color: selected ? null : AppTheme.surface,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(
+                      color: selected ? AppTheme.primary : AppTheme.surface2,
+                    ),
+                    boxShadow: selected
+                        ? [BoxShadow(
+                            color: AppTheme.primary.withOpacity(0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4))]
+                        : [],
+                  ),
+                  child: Text(
+                    option,
+                    style: TextStyle(
+                      color: selected ? Colors.white : AppTheme.textMedium,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _SectionLabel(label: 'Age Preference'),
+              Text(
+                '${_agePreference.start.round()} – ${_agePreference.end.round()} yrs',
+                style: const TextStyle(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppTheme.primary,
+              inactiveTrackColor: AppTheme.surface2,
+              thumbColor: AppTheme.primary,
+              overlayColor: AppTheme.primary.withOpacity(0.2),
+              valueIndicatorColor: AppTheme.primary,
+              valueIndicatorTextStyle: const TextStyle(color: Colors.white),
+              rangeThumbShape: const RoundRangeSliderThumbShape(enabledThumbRadius: 10),
+            ),
+            child: RangeSlider(
+              values: _agePreference,
+              min: 18,
+              max: 60,
+              divisions: 42,
+              labels: RangeLabels(
+                _agePreference.start.round().toString(),
+                _agePreference.end.round().toString(),
+              ),
+              onChanged: (v) => setState(() => _agePreference = v),
+            ),
           ),
         ],
       ),
