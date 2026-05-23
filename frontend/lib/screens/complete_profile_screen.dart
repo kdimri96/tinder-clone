@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../utils/api_error.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({Key? key}) : super(key: key);
@@ -71,11 +72,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         updatedUser.photos.where((p) => !_uploadedPhotos.contains(p)),
       ));
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(extractApiError(e)), backgroundColor: AppTheme.error),
-        );
-      }
+      if (mounted) AppNotification.error(context, extractApiError(e));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -116,9 +113,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppTheme.error),
-    );
+    AppNotification.error(context, msg);
   }
 
   void _nextPage() {

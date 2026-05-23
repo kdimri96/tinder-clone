@@ -10,6 +10,7 @@ import '../services/location_service.dart';
 import '../widgets/swipe_card.dart';
 import '../widgets/match_modal.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({Key? key}) : super(key: key);
@@ -22,6 +23,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   final CardSwiperController _controller = CardSwiperController();
   bool _showMatchModal = false;
   UserModel? _matchedUser;
+  bool _deckExhausted = false;
 
   @override
   void initState() {
@@ -36,6 +38,19 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     final discovery = context.read<DiscoveryProvider>();
     await LocationService.updateUserLocation(api);
     if (mounted) discovery.loadUsers();
+  }
+
+  // Called when navigating back to this screen (e.g. after changing Settings).
+  // Resets and reloads the deck so new preference filters are applied immediately.
+  Future<void> _reloadAfterReturn() async {
+    final discovery = context.read<DiscoveryProvider>();
+    setState(() => _deckExhausted = false);
+    await discovery.reset();
+    if (mounted) {
+      final api = context.read<ApiService>();
+      await LocationService.updateUserLocation(api);
+      if (mounted) discovery.loadUsers();
+    }
   }
 
   @override
@@ -72,27 +87,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   }
 
   void _showLikesExhaustedSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Expanded(
-              child: Text('No likes left today. Get Unlimited Likes!'),
-            ),
-            TextButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                Navigator.pushNamed(context, '/premium');
-              },
-              child: const Text('Upgrade', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 4),
-      ),
+    AppNotification.primary(
+      context,
+      'No likes left today. Get Unlimited Likes!',
+      icon: Icons.favorite_border,
+      actionLabel: 'Upgrade',
+      onAction: () => Navigator.pushNamed(context, '/premium'),
     );
   }
 
@@ -137,28 +137,14 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       final usedToday = await provider.hasUsedRewindToday();
       if (usedToday) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Expanded(
-                    child: Text('Upgrade to Gold for unlimited rewinds'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      Navigator.pushNamed(context, '/premium');
-                    },
-                    child: const Text('Upgrade',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                  ),
-                ],
-              ),
-              backgroundColor: const Color(0xFFFFAA00),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              duration: const Duration(seconds: 4),
-            ),
+          AppNotification.show(
+            context,
+            message: 'Upgrade to Gold for unlimited rewinds',
+            backgroundColor: const Color(0xFFFFAA00),
+            textColor: Colors.white,
+            icon: Icons.replay_rounded,
+            actionLabel: 'Upgrade',
+            onAction: () => Navigator.pushNamed(context, '/premium'),
           );
         }
         return;
@@ -172,25 +158,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
         if (!isPremium) {
           await provider.markRewindUsed();
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Last swipe undone!'),
-            backgroundColor: AppTheme.surface,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        AppNotification.info(context, 'Last swipe undone!');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Nothing to rewind'),
-            backgroundColor: AppTheme.surface,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        AppNotification.info(context, 'Nothing to rewind');
       }
     }
   }
@@ -251,7 +221,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.tune),
-                onPressed: () => Navigator.pushNamed(context, '/settings'),
+                onPressed: () async {
+                  await Navigator.pushNamed(context, '/settings');
+                  if (mounted) _reloadAfterReturn();
+                },
               ),
             ],
           ),
@@ -261,7 +234,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (provider.users.isEmpty) {
+              if (provider.users.isEmpty || _deckExhausted) {
                 return _buildEmptyState();
               }
 
@@ -295,13 +268,22 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                       child: CardSwiper(
                         controller: _controller,
                         cardsCount: provider.users.length,
+                        isLoop: false,
                         onSwipe: (index, oldIndex, direction) {
                           _onSwipe(index, oldIndex, direction);
-                          // Load more when running low
-                          if (provider.users.length - index < 3 && provider.hasMore) {
+                          // Load more when running low on cards
+                          final remaining = provider.users.length - (oldIndex ?? index) - 1;
+                          if (remaining < 3 && provider.hasMore) {
                             provider.loadUsers();
                           }
                           return true;
+                        },
+                        onEnd: () {
+                          if (!provider.hasMore) {
+                            setState(() => _deckExhausted = true);
+                          } else {
+                            provider.loadUsers();
+                          }
                         },
                         numberOfCardsDisplayed: provider.users.length.clamp(1, 3),
                         backCardOffset: const Offset(0, -15),
@@ -402,6 +384,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: () async {
+              setState(() => _deckExhausted = false);
               await context.read<DiscoveryProvider>().reset();
               context.read<DiscoveryProvider>().loadUsers();
             },

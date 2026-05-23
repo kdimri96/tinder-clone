@@ -17,6 +17,7 @@ import 'screens/complete_profile_screen.dart';
 import 'screens/premium_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/liked_you_screen.dart';
+import 'screens/user_profile_screen.dart';
 import 'models/user_model.dart';
 import 'utils/app_theme.dart';
 
@@ -88,6 +89,14 @@ class KneedYouApp extends StatelessWidget {
                     matchId: args['matchId'] as String,
                     otherUser: args['user'] as UserModel,
                   ),
+                );
+              }
+              return MaterialPageRoute(builder: (_) => const HomeScreen());
+            case '/user-profile':
+              final user = settings.arguments as UserModel?;
+              if (user != null) {
+                return MaterialPageRoute(
+                  builder: (_) => UserProfileScreen(user: user),
                 );
               }
               return MaterialPageRoute(builder: (_) => const HomeScreen());

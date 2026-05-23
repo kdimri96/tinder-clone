@@ -72,6 +72,14 @@ const sendMessage = async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       io.to(matchId).emit('chat:message', { message });
+      const otherUserId = match.users.map((u) => u.toString()).find((id) => id !== req.userId.toString());
+      if (otherUserId) {
+        io.to(otherUserId).emit('chat:notification', {
+          matchId,
+          senderName: message.senderId?.name || 'Someone',
+          text: text.trim(),
+        });
+      }
     }
 
     res.status(201).json({ message });
@@ -115,6 +123,14 @@ const sendPhotoMessage = async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       io.to(matchId).emit('chat:message', { message });
+      const otherUserId = match.users.map((u) => u.toString()).find((id) => id !== req.userId.toString());
+      if (otherUserId) {
+        io.to(otherUserId).emit('chat:notification', {
+          matchId,
+          senderName: message.senderId?.name || 'Someone',
+          text: '📷 Photo',
+        });
+      }
     }
 
     res.status(201).json({ message });

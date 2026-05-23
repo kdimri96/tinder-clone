@@ -5,6 +5,7 @@ import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../utils/api_error.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -51,27 +52,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
       if (mounted) {
         context.read<AuthProvider>().updateUser(updatedUser);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Preferences saved!'),
-            backgroundColor: AppTheme.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        AppNotification.success(context, 'Preferences saved!');
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(extractApiError(e)),
-            backgroundColor: AppTheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
+      if (mounted) AppNotification.error(context, extractApiError(e));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

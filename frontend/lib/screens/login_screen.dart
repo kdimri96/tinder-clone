@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 import '../widgets/auth_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -91,12 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.error,
-      ),
-    );
+    AppNotification.error(context, message);
   }
 
   @override

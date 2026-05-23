@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../widgets/network_image_widget.dart';
 import '../widgets/match_modal.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 class LikedYouScreen extends StatefulWidget {
   const LikedYouScreen({Key? key}) : super(key: key);
@@ -80,14 +81,7 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        AppNotification.error(context, 'Error: ${e.toString()}');
       }
     }
   }

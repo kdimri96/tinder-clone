@@ -11,6 +11,7 @@ import '../widgets/message_bubble.dart';
 import '../widgets/network_image_widget.dart';
 import '../widgets/report_dialog.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 class ChatScreen extends StatefulWidget {
   final String matchId;
@@ -108,7 +109,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (confirmed != true || !mounted) return;
     await context.read<ChatProvider>().sendPhoto(widget.matchId, picked);
-    _scrollToBottom();
+    if (mounted) {
+      final err = context.read<ChatProvider>().error;
+      if (err != null) {
+        AppNotification.error(context, 'Failed to send photo: $err');
+      } else {
+        _scrollToBottom();
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -132,7 +140,10 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         backgroundColor: AppTheme.surface,
         leadingWidth: 30,
-        title: Row(
+        title: GestureDetector(
+          onTap: () => Navigator.pushNamed(context, '/user-profile',
+              arguments: widget.otherUser),
+          child: Row(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -185,6 +196,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+        ),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppTheme.textMedium),
@@ -192,11 +204,25 @@ class _ChatScreenState extends State<ChatScreen> {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) {
-              if (value == 'report') {
+              if (value == 'view_profile') {
+                Navigator.pushNamed(context, '/user-profile',
+                    arguments: widget.otherUser);
+              } else if (value == 'report') {
                 showReportBottomSheet(context, widget.otherUser);
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'view_profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, color: AppTheme.primary, size: 18),
+                    SizedBox(width: 10),
+                    Text('View Profile',
+                        style: TextStyle(color: AppTheme.textDark)),
+                  ],
+                ),
+              ),
               const PopupMenuItem<String>(
                 value: 'report',
                 child: Row(

@@ -9,7 +9,7 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const allowedFields = ['name', 'age', 'gender', 'bio', 'job', 'school', 'interests', 'preferences'];
+    const allowedFields = ['name', 'age', 'gender', 'bio', 'job', 'school', 'interests'];
     const updates = {};
 
     allowedFields.forEach((field) => {
@@ -17,6 +17,16 @@ const updateProfile = async (req, res) => {
         updates[field] = req.body[field];
       }
     });
+
+    // Use dot-notation for preferences so existing keys (e.g. maxDistance) are
+    // preserved instead of the whole subdocument being replaced.
+    if (req.body.preferences) {
+      const p = req.body.preferences;
+      if (p.genderPreference !== undefined) updates['preferences.genderPreference'] = p.genderPreference;
+      if (p.minAge !== undefined) updates['preferences.minAge'] = p.minAge;
+      if (p.maxAge !== undefined) updates['preferences.maxAge'] = p.maxAge;
+      if (p.maxDistance !== undefined) updates['preferences.maxDistance'] = p.maxDistance;
+    }
 
     if (req.body.age !== undefined) {
       const age = parseInt(req.body.age);

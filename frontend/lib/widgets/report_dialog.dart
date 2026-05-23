@@ -4,6 +4,7 @@ import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../providers/discovery_provider.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 void showReportBottomSheet(BuildContext context, UserModel user) {
   showModalBottomSheet(
@@ -43,14 +44,7 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
 
   Future<void> _submitReport() async {
     if (_selectedReason == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select a reason'),
-          backgroundColor: AppTheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      AppNotification.error(context, 'Please select a reason');
       return;
     }
     setState(() => _isSubmitting = true);
@@ -64,26 +58,10 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
       if (mounted) {
         context.read<DiscoveryProvider>().removeUserById(widget.user.id);
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.user.name} has been reported and blocked.'),
-            backgroundColor: AppTheme.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        AppNotification.success(context, '${widget.user.name} has been reported and blocked.');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: ${e.toString()}'),
-            backgroundColor: AppTheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
+      if (mounted) AppNotification.error(context, 'Failed: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -97,26 +75,10 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
       if (mounted) {
         context.read<DiscoveryProvider>().removeUserById(widget.user.id);
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.user.name} has been blocked.'),
-            backgroundColor: AppTheme.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        AppNotification.success(context, '${widget.user.name} has been blocked.');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: ${e.toString()}'),
-            backgroundColor: AppTheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
+      if (mounted) AppNotification.error(context, 'Failed: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

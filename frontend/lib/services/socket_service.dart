@@ -34,10 +34,13 @@ class SocketService {
     _socket = IO.io(
       _baseUrl,
       IO.OptionBuilder()
-          .setTransports(kIsWeb ? ['polling', 'websocket'] : ['websocket'])
+          .setTransports(['websocket'])
+          .setExtraHeaders({'ngrok-skip-browser-warning': 'true'})
           .setAuth({'token': token})
           .enableAutoConnect()
           .enableReconnection()
+          .setReconnectionAttempts(double.infinity.toInt())
+          .setReconnectionDelay(1000)
           .build(),
     );
 

@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../models/user_model.dart';
 import '../widgets/network_image_widget.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -59,11 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final updatedUser = await api.uploadPhoto(picked);
       context.read<AuthProvider>().updateUser(updatedUser);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e'), backgroundColor: AppTheme.error),
-        );
-      }
+      if (mounted) AppNotification.error(context, 'Upload failed: $e');
     }
   }
 
@@ -73,11 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final updatedUser = await api.deletePhoto(photoUrl);
       context.read<AuthProvider>().updateUser(updatedUser);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Delete failed: $e'), backgroundColor: AppTheme.error),
-        );
-      }
+      if (mounted) AppNotification.error(context, 'Delete failed: $e');
     }
   }
 
@@ -95,20 +88,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'interests': _interests,
       });
       context.read<AuthProvider>().updateUser(updatedUser);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile saved!'),
-            backgroundColor: AppTheme.success,
-          ),
-        );
-      }
+      if (mounted) AppNotification.success(context, 'Profile saved!');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Save failed: $e'), backgroundColor: AppTheme.error),
-        );
-      }
+      if (mounted) AppNotification.error(context, 'Save failed: $e');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

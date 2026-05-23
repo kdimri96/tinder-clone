@@ -6,6 +6,7 @@ import '../providers/chat_provider.dart';
 import '../providers/match_provider.dart';
 import '../services/socket_service.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 import 'discovery_screen.dart';
 import 'matches_screen.dart';
 import 'liked_you_screen.dart';
@@ -61,34 +62,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _lastShownMatchId = newMatch.id;
       final other = newMatch.otherUser;
       if (other != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.favorite, color: Colors.white, size: 18),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'You matched with ${other.name}!',
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppTheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            action: SnackBarAction(
-              label: 'Chat',
-              textColor: Colors.white,
-              onPressed: () {
-                setState(() => _currentIndex = 1);
-                Navigator.pushNamed(context, '/chat',
-                    arguments: {'matchId': newMatch.id, 'user': other});
-              },
-            ),
-          ),
+        AppNotification.primary(
+          context,
+          'You matched with ${other.name}!',
+          actionLabel: 'Chat',
+          onAction: () {
+            setState(() => _currentIndex = 1);
+            Navigator.pushNamed(context, '/chat',
+                arguments: {'matchId': newMatch.id, 'user': other});
+          },
         );
       }
     }
@@ -97,30 +79,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onLikedYou() {
     if (!mounted) return;
     setState(() => _newLikesCount++);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.favorite, color: Colors.white, size: 18),
-            SizedBox(width: 10),
-            Text(
-              'Someone liked your profile!',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        action: SnackBarAction(
-          label: 'See who',
-          textColor: Colors.white,
-          onPressed: () => setState(() {
-            _currentIndex = 2;
-            _newLikesCount = 0;
-          }),
-        ),
-      ),
+    // Suppress banner if user is already on the Likes tab
+    if (_currentIndex == 2) return;
+    AppNotification.show(
+      context,
+      message: 'Someone liked your profile!',
+      backgroundColor: AppTheme.surface,
+      textColor: AppTheme.textDark,
+      icon: Icons.star_rounded,
+      iconColor: const Color(0xFFFFAA00),
+      actionLabel: 'View',
+      onAction: () => _onTabTap(2),
     );
   }
 
@@ -131,49 +100,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final activeChatId = context.read<ChatProvider>().activeChatMatchId;
     if (activeChatId == matchId) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.chat_bubble, color: Colors.white, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    senderName,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13),
-                  ),
-                  Text(
-                    text,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.surface,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppTheme.surface2),
-        ),
-        action: SnackBarAction(
-          label: 'Reply',
-          textColor: AppTheme.primary,
-          onPressed: () {
-            setState(() => _currentIndex = 1);
-          },
-        ),
-      ),
+    AppNotification.show(
+      context,
+      message: '$senderName: $text',
+      backgroundColor: AppTheme.surface,
+      textColor: AppTheme.textDark,
+      icon: Icons.chat_bubble_outline,
+      iconColor: AppTheme.primary,
+      actionLabel: 'Reply',
+      onAction: () => setState(() => _currentIndex = 1),
     );
   }
 

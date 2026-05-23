@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({Key? key}) : super(key: key);
@@ -38,12 +39,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       final destination = auth.isProfileComplete ? '/home' : '/complete-profile';
       Navigator.pushReplacementNamed(context, destination);
     } else if (auth.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.error!),
-          backgroundColor: AppTheme.error,
-        ),
-      );
+      AppNotification.error(context, auth.error!);
     }
   }
 

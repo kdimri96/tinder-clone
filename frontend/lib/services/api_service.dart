@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
@@ -180,7 +181,11 @@ class ApiService {
   Future<UserModel> uploadPhoto(XFile file) async {
     final bytes = await file.readAsBytes();
     final formData = FormData.fromMap({
-      'photo': MultipartFile.fromBytes(bytes, filename: file.name),
+      'photo': MultipartFile.fromBytes(
+        bytes,
+        filename: _safeFilename(file.name, 'photo.jpg'),
+        contentType: MediaType.parse(_mimeType(file)),
+      ),
     });
     final response = await _dio.post('/profile/photo', data: formData);
     return UserModel.fromJson(response.data['user']);
@@ -256,10 +261,32 @@ class ApiService {
   Future<MessageModel> sendPhotoMessage(String matchId, XFile file) async {
     final bytes = await file.readAsBytes();
     final formData = FormData.fromMap({
-      'photo': MultipartFile.fromBytes(bytes, filename: file.name),
+      'photo': MultipartFile.fromBytes(
+        bytes,
+        filename: _safeFilename(file.name, 'photo.jpg'),
+        contentType: MediaType.parse(_mimeType(file)),
+      ),
     });
     final response = await _dio.post('/messages/$matchId/photo', data: formData);
     return MessageModel.fromJson(response.data['message']);
+  }
+
+  // Returns the MIME type for an XFile: uses the declared mimeType if available,
+  // otherwise guesses from the filename extension.
+  String _mimeType(XFile file) {
+    if (file.mimeType != null && file.mimeType!.isNotEmpty) return file.mimeType!;
+    final ext = file.name.toLowerCase().split('.').last;
+    const map = {
+      'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+      'png': 'image/png', 'webp': 'image/webp', 'gif': 'image/gif',
+    };
+    return map[ext] ?? 'image/jpeg';
+  }
+
+  // Ensures the filename is non-empty and has a proper extension.
+  String _safeFilename(String name, String fallback) {
+    if (name.isEmpty || !name.contains('.')) return fallback;
+    return name;
   }
 
   Future<String?> getStoredToken() async {

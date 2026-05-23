@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/premium_provider.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_notification.dart';
 
 // Razorpay disabled during testing
 
@@ -24,14 +25,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
   }
 
   Future<void> _purchasePlan(PlanModel plan) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Payments coming soon! Testing in progress.'),
-        backgroundColor: AppTheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    AppNotification.info(context, 'Payments coming soon! Testing in progress.');
   }
 
 

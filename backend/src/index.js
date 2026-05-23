@@ -44,10 +44,15 @@ const corsOptions = {
 
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // mobile apps have no origin
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`Socket CORS: origin ${origin} not allowed`));
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
+  transports: ['websocket', 'polling'],
 });
 
 app.set('io', io);

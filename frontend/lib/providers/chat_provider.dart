@@ -63,6 +63,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> sendMessage(String matchId, String text) async {
+    _error = null;
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final optimistic = MessageModel(
       id: tempId,
@@ -80,6 +81,10 @@ class ChatProvider extends ChangeNotifier {
     try {
       final sent = await _api.sendMessage(matchId, text);
       final msgs = _messages[matchId]!;
+      // Remove any socket-delivered copy that arrived before the API response
+      // (race condition: socket fires → _onMessage adds real ID → API returns
+      // and replaces temp → two entries with the same real ID).
+      msgs.removeWhere((m) => m.id == sent.id);
       final idx = msgs.indexWhere((m) => m.id == tempId);
       if (idx >= 0) msgs[idx] = sent;
       notifyListeners();
@@ -91,6 +96,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> sendPhoto(String matchId, XFile file) async {
+    _error = null;
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final optimistic = MessageModel(
       id: tempId,
@@ -108,6 +114,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       final sent = await _api.sendPhotoMessage(matchId, file);
       final msgs = _messages[matchId]!;
+      msgs.removeWhere((m) => m.id == sent.id);
       final idx = msgs.indexWhere((m) => m.id == tempId);
       if (idx >= 0) msgs[idx] = sent;
       notifyListeners();

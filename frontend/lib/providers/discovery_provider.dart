@@ -4,7 +4,7 @@ import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../utils/api_error.dart';
 
-const int _dailyLikeLimit = 10;
+const int _dailyLikeLimit = 1000;
 const String _prefLikeCount = 'daily_like_count';
 const String _prefLikeDate = 'daily_like_date';
 const String _prefRewindDate = 'last_rewind_date';
@@ -186,6 +186,7 @@ class DiscoveryProvider extends ChangeNotifier {
     _users = [];
     _page = 1;
     _hasMore = true;
+    _isLoading = false;
     _error = null;
     _matchedUser = null;
     _expandedSearch = false;
