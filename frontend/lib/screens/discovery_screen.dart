@@ -168,6 +168,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     final success = await provider.rewind();
     if (mounted) {
       if (success) {
+        _controller.undo();
         if (!isPremium) {
           await provider.markRewindUsed();
         }

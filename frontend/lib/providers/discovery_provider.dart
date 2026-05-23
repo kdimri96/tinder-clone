@@ -109,7 +109,9 @@ class DiscoveryProvider extends ChangeNotifier {
     try {
       final result = await _api.swipe(targetId: targetId, direction: 'like');
       await _incrementLikeCount();
-      _removeUser(targetId);
+      // Don't remove the user from the list here — CardSwiper manages its own
+      // index. Removing while a swipe is in progress shifts indices and makes
+      // subsequent cards point to the wrong user or appear empty.
       if (result['match'] != null) {
         _matchedUser = UserModel.fromJson(result['match']['users']
             .firstWhere((u) => u['_id'] == targetId, orElse: () => result['match']['users'][0]));
@@ -128,7 +130,7 @@ class DiscoveryProvider extends ChangeNotifier {
   Future<void> swipeLeft(String targetId) async {
     try {
       await _api.swipe(targetId: targetId, direction: 'dislike');
-      _removeUser(targetId);
+      // Don't remove from list — CardSwiper advances its index on its own.
       notifyListeners();
     } catch (e) {
       _error = extractApiError(e);
@@ -138,7 +140,6 @@ class DiscoveryProvider extends ChangeNotifier {
   Future<bool> superLike(String targetId) async {
     try {
       final result = await _api.swipe(targetId: targetId, direction: 'superlike');
-      _removeUser(targetId);
       if (result['match'] != null) {
         _matchedUser = UserModel.fromJson(result['match']['users']
             .firstWhere((u) => u['_id'] == targetId, orElse: () => result['match']['users'][0]));
@@ -154,16 +155,12 @@ class DiscoveryProvider extends ChangeNotifier {
     }
   }
 
+  // Rewind just undoes the API swipe record. The visual "go back one card"
+  // is handled by calling _controller.undo() in DiscoveryScreen.
   Future<bool> rewind() async {
     try {
       final data = await _api.rewindSwipe();
-      if (data['user'] != null) {
-        final user = UserModel.fromJson(data['user']);
-        _users.insert(0, user);
-        notifyListeners();
-        return true;
-      }
-      return false;
+      return data['user'] != null;
     } catch (e) {
       _error = extractApiError(e);
       notifyListeners();

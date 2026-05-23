@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -95,8 +96,17 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendPhoto() async {
     final picker = ImagePicker();
     final picked =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (picked == null || !mounted) return;
+
+    // Show WhatsApp-style preview & confirmation before sending
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => _ImagePreviewDialog(file: picked),
+    );
+
+    if (confirmed != true || !mounted) return;
     await context.read<ChatProvider>().sendPhoto(widget.matchId, picked);
     _scrollToBottom();
   }
@@ -379,6 +389,136 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           ), // SafeArea
         ],
+      ),
+    );
+  }
+}
+
+// ── Image preview dialog (shown before sending) ──────────────────────────────
+class _ImagePreviewDialog extends StatefulWidget {
+  final XFile file;
+  const _ImagePreviewDialog({required this.file});
+
+  @override
+  State<_ImagePreviewDialog> createState() => _ImagePreviewDialogState();
+}
+
+class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
+  Uint8List? _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.file.readAsBytes().then((b) {
+      if (mounted) setState(() => _bytes = b);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              color: AppTheme.surface,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  const Icon(Icons.image_outlined, color: AppTheme.textMedium, size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Send photo?',
+                      style: TextStyle(
+                        color: AppTheme.textDark,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context, false),
+                    child: const Icon(Icons.close, color: AppTheme.textMedium, size: 22),
+                  ),
+                ],
+              ),
+            ),
+
+            // Image preview
+            Container(
+              color: Colors.black,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.55,
+              ),
+              width: double.infinity,
+              child: _bytes == null
+                  ? const SizedBox(
+                      height: 200,
+                      child: Center(
+                          child: CircularProgressIndicator(color: Colors.white)),
+                    )
+                  : Image.memory(
+                      _bytes!,
+                      fit: BoxFit.contain,
+                    ),
+            ),
+
+            // Action buttons
+            Container(
+              color: AppTheme.surface,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.textMedium,
+                        side: const BorderSide(color: AppTheme.surface2),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text('Cancel',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        icon: const Icon(Icons.send_rounded,
+                            color: Colors.white, size: 18),
+                        label: const Text('Send',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

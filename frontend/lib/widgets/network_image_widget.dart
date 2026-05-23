@@ -27,6 +27,7 @@ class NetworkImageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget image = CachedNetworkImage(
       imageUrl: _fullUrl,
+      httpHeaders: const {'ngrok-skip-browser-warning': 'true'},
       fit: fit,
       width: width,
       height: height,
@@ -36,7 +37,7 @@ class NetworkImageWidget extends StatelessWidget {
       ),
       errorWidget: (_, __, ___) => Container(
         color: Colors.grey[300],
-        child: const Icon(Icons.person, size: 40, color: Colors.grey),
+        child: const Icon(Icons.broken_image_outlined, size: 40, color: Colors.grey),
       ),
     );
 
