@@ -16,6 +16,10 @@ class MatchProvider extends ChangeNotifier {
   // when the user opens the Matches tab.
   int _newNotificationsCount = 0;
 
+  // Badge count for the Likes tab — incremented by liked:you socket events,
+  // cleared when the user opens the Likes tab.
+  int _newLikesCount = 0;
+
   // The most recent match that arrived via socket (used by HomeScreen to show
   // the "You matched!" snackbar). Compared by ID so reference changes don't
   // produce duplicate snackbars after an API reload.
@@ -25,12 +29,15 @@ class MatchProvider extends ChangeNotifier {
     _socket.onMatch(_onNewMatch);
     _socket.onMessage(_onNewMessage);
     _socket.onChatNotification(_onChatNotification);
+    _socket.onLikedYou(_onLikedYou);
+    _socket.onReconnect(_onReconnect);
   }
 
   List<MatchModel> get matches => _matches;
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get newNotificationsCount => _newNotificationsCount;
+  int get newLikesCount => _newLikesCount;
   MatchModel? get lastNewMatch => _lastNewMatch;
 
   void clearNewNotifications() {
@@ -38,6 +45,12 @@ class MatchProvider extends ChangeNotifier {
     _newNotificationsCount = 0;
     // Keep _lastNewMatch so the snackbar identity check in HomeScreen works;
     // HomeScreen resets _lastShownMatchId on its own.
+    notifyListeners();
+  }
+
+  void clearNewLikes() {
+    if (_newLikesCount == 0) return;
+    _newLikesCount = 0;
     notifyListeners();
   }
 
@@ -62,26 +75,34 @@ class MatchProvider extends ChangeNotifier {
   // trying to render the socket model directly.
   void _onNewMatch(MatchModel socketMatch) async {
     _newNotificationsCount++;
-    // Join the new room immediately so messages are received in real-time
     _socket.joinMatchRoom(socketMatch.id);
-    notifyListeners(); // update badge right away
+    notifyListeners(); // badge update
 
     try {
       final fresh = await _api.getMatches();
       _matches = fresh;
-      // After reload, the newest match is first (sorted by lastMessageAt/createdAt desc)
-      if (_matches.isNotEmpty) {
-        _lastNewMatch = _matches.first;
-      }
+      // Pick the match that just arrived — it should be first since sorted by createdAt desc
+      final arrived = _matches.firstWhere(
+        (m) => m.id == socketMatch.id,
+        orElse: () => _matches.isNotEmpty ? _matches.first : socketMatch,
+      );
+      _lastNewMatch = arrived;
     } catch (_) {
-      // Fallback: insert raw socket match (otherUser may be null — tile won't render
-      // but the count/snackbar still works once the user refreshes)
       if (!_matches.any((m) => m.id == socketMatch.id)) {
         _matches.insert(0, socketMatch);
       }
       _lastNewMatch = socketMatch;
     }
     notifyListeners();
+  }
+
+  // Silent background refresh used by the swiper side (match confirmed via REST).
+  // Does not show a loading spinner or update the badge — the socket event handles those.
+  Future<void> silentRefresh() async {
+    try {
+      _matches = await _api.getMatches();
+      notifyListeners();
+    } catch (_) {}
   }
 
   // Called when a `chat:message` socket event arrives.
@@ -108,6 +129,17 @@ class MatchProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _onLikedYou() {
+    _newLikesCount++;
+    notifyListeners();
+  }
+
+  // After a socket reconnect, re-fetch matches so any events missed during
+  // the outage are reflected immediately without a manual page reload.
+  void _onReconnect() {
+    silentRefresh();
+  }
+
   Future<void> unmatch(String matchId) async {
     try {
       await _api.unmatch(matchId);
@@ -124,6 +156,8 @@ class MatchProvider extends ChangeNotifier {
     _socket.removeMatchListener(_onNewMatch);
     _socket.removeMessageListener(_onNewMessage);
     _socket.removeChatNotificationListener(_onChatNotification);
+    _socket.removeLikedYouListener(_onLikedYou);
+    _socket.removeReconnectListener(_onReconnect);
     super.dispose();
   }
 }

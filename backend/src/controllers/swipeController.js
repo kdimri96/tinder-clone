@@ -32,24 +32,41 @@ const swipe = async (req, res) => {
     const io = req.app.get('io');
     let match = null;
 
-    if (direction === 'like' || direction === 'superlike') {
-      // Notify target user that someone liked them (without revealing who)
-      if (io) {
-        io.to(targetId).emit('liked:you', { count: 1 });
-      }
-      const mutualSwipe = await Swipe.findOne({
-        swiperId: targetId,
-        targetId: swiperId,
-        direction: { $in: ['like', 'superlike'] },
-      });
+    const existingMatch = await Match.findOne({
+      users: { $all: [swiperId, targetId] },
+      unmatchedBy: null,
+    });
 
-      if (mutualSwipe) {
-        const existingMatch = await Match.findOne({
-          users: { $all: [swiperId, targetId] },
-          unmatchedBy: null,
+    if (direction === 'superlike') {
+      // Super like creates an instant match — no mutual required
+      if (existingMatch) {
+        match = await existingMatch.populate('users', 'name photos age');
+      } else {
+        const swiperUser = await User.findById(swiperId).select('name');
+        match = await Match.create({
+          users: [swiperId, targetId],
+          isSuperLike: true,
+          superLikeBy: swiperId,
+        });
+        await match.populate('users', 'name photos age');
+
+        if (io) {
+          io.to(swiperId).emit('match', { match });
+          io.to(targetId).emit('match', { match });
+        }
+      }
+    } else if (direction === 'like') {
+      // Notify target that someone liked them (without revealing who)
+      if (io) io.to(targetId).emit('liked:you', { count: 1 });
+
+      if (!existingMatch) {
+        const mutualSwipe = await Swipe.findOne({
+          swiperId: targetId,
+          targetId: swiperId,
+          direction: { $in: ['like', 'superlike'] },
         });
 
-        if (!existingMatch) {
+        if (mutualSwipe) {
           match = await Match.create({ users: [swiperId, targetId] });
           await match.populate('users', 'name photos age');
 
@@ -58,6 +75,11 @@ const swipe = async (req, res) => {
             io.to(targetId).emit('match', { match });
           }
         }
+      }
+      // If existingMatch (target previously super-liked us), silently return it
+      // so the swiper can navigate to chat — no new notification needed
+      else {
+        match = await existingMatch.populate('users', 'name photos age');
       }
     }
 

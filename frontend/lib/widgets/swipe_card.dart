@@ -4,9 +4,9 @@ import '../utils/app_theme.dart';
 import 'network_image_widget.dart';
 import 'report_dialog.dart';
 
-class SwipeCard extends StatelessWidget {
+class SwipeCard extends StatefulWidget {
   final UserModel user;
-  final double? swipeProgress; // -1.0 to 1.0, negative = left
+  final double? swipeProgress;
   final bool isTopCard;
 
   const SwipeCard({
@@ -17,7 +17,29 @@ class SwipeCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<SwipeCard> createState() => _SwipeCardState();
+}
+
+class _SwipeCardState extends State<SwipeCard> {
+  int _currentPhoto = 0;
+
+  void _nextPhoto() {
+    if (_currentPhoto < widget.user.photos.length - 1) {
+      setState(() => _currentPhoto++);
+    }
+  }
+
+  void _prevPhoto() {
+    if (_currentPhoto > 0) {
+      setState(() => _currentPhoto--);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final photos = widget.user.photos;
+    final hasMany = photos.length > 1;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -34,25 +56,57 @@ class SwipeCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Photo
-            _buildPhoto(),
+            // Current photo
+            _buildPhoto(photos),
 
             // Gradient overlay
             Container(
-              decoration: BoxDecoration(
-                gradient: AppTheme.cardGradient,
-              ),
+              decoration: BoxDecoration(gradient: AppTheme.cardGradient),
             ),
 
-            // Like/Nope labels
-            if (isTopCard && swipeProgress != null) _buildSwipeLabels(),
+            // Tap zones for photo navigation — placed before overlays that
+            // also need taps so the Stack Z-order gives those priority.
+            if (hasMany)
+              Positioned.fill(
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: _prevPhoto,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: _nextPhoto,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-            // More options button at top-right
+            // Photo progress bars (Tinder-style) at top
+            if (hasMany)
+              Positioned(
+                top: 10,
+                left: 8,
+                right: 8,
+                child: _buildProgressBars(photos.length),
+              ),
+
+            // Like / Nope labels
+            if (widget.isTopCard && widget.swipeProgress != null)
+              _buildSwipeLabels(),
+
+            // More options button — placed AFTER tap zones so it wins hit test
             Positioned(
               top: 12,
               right: 12,
               child: GestureDetector(
-                onTap: () => showReportBottomSheet(context, user),
+                onTap: () => showReportBottomSheet(context, widget.user),
                 child: Container(
                   width: 36,
                   height: 36,
@@ -60,11 +114,7 @@ class SwipeCard extends StatelessWidget {
                     color: Colors.black.withOpacity(0.45),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.more_vert,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  child: const Icon(Icons.more_vert, color: Colors.white, size: 20),
                 ),
               ),
             ),
@@ -82,24 +132,45 @@ class SwipeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPhoto() {
-    if (user.photos.isEmpty) {
+  Widget _buildPhoto(List<String> photos) {
+    if (photos.isEmpty) {
       return Container(
         color: Colors.grey[300],
         child: const Icon(Icons.person, size: 80, color: Colors.grey),
       );
     }
+    final idx = _currentPhoto.clamp(0, photos.length - 1);
     return NetworkImageWidget(
-      imageUrl: user.photos.first,
+      key: ValueKey(photos[idx]),
+      imageUrl: photos[idx],
       fit: BoxFit.cover,
     );
   }
 
+  Widget _buildProgressBars(int count) {
+    return Row(
+      children: List.generate(count, (i) {
+        return Expanded(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 3,
+            margin: const EdgeInsets.symmetric(horizontal: 2),
+            decoration: BoxDecoration(
+              color: i == _currentPhoto
+                  ? Colors.white
+                  : Colors.white.withOpacity(0.45),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildSwipeLabels() {
-    final progress = swipeProgress ?? 0;
+    final progress = widget.swipeProgress ?? 0;
     return Stack(
       children: [
-        // Like label (right swipe)
         if (progress > 0.1)
           Positioned(
             top: 40,
@@ -124,8 +195,6 @@ class SwipeCard extends StatelessWidget {
               ),
             ),
           ),
-
-        // Nope label (left swipe)
         if (progress < -0.1)
           Positioned(
             top: 40,
@@ -155,6 +224,7 @@ class SwipeCard extends StatelessWidget {
   }
 
   Widget _buildUserInfo() {
+    final user = widget.user;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -190,10 +260,7 @@ class SwipeCard extends StatelessWidget {
             children: [
               const Icon(Icons.work, color: Colors.white70, size: 14),
               const SizedBox(width: 4),
-              Text(
-                user.job!,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
+              Text(user.job!, style: const TextStyle(color: Colors.white70, fontSize: 14)),
             ],
           ),
         ],

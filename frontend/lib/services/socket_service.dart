@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, VoidCallback;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/message_model.dart';
 import '../models/match_model.dart';
@@ -11,6 +11,7 @@ typedef TypingCallback = void Function(String matchId, String userId, bool isTyp
 typedef PresenceCallback = void Function(String userId, bool isOnline);
 typedef LikedYouCallback = void Function();
 typedef ChatNotificationCallback = void Function(String matchId, String senderName, String text);
+typedef SnapViewedCallback = void Function(String messageId, String viewedBy);
 
 class SocketService {
   static String get _baseUrl => AppConfig.socketBaseUrl;
@@ -23,6 +24,8 @@ class SocketService {
   final List<PresenceCallback> _presenceListeners = [];
   final List<LikedYouCallback> _likedYouListeners = [];
   final List<ChatNotificationCallback> _chatNotificationListeners = [];
+  final List<SnapViewedCallback> _snapViewedListeners = [];
+  final List<VoidCallback> _reconnectListeners = [];
 
   // Live online-status map so any widget can call isUserOnline() synchronously
   final Map<String, bool> _onlineStatus = {};
@@ -39,13 +42,21 @@ class SocketService {
           .setAuth({'token': token})
           .enableAutoConnect()
           .enableReconnection()
-          .setReconnectionAttempts(double.infinity.toInt())
+          .setReconnectionAttempts(999999)
           .setReconnectionDelay(1000)
           .build(),
     );
 
+    bool _firstConnect = true;
     _socket!.onConnect((_) {
       print('Socket connected');
+      if (!_firstConnect) {
+        // Reconnect after a drop — notify listeners so they can refresh data
+        for (final cb in _reconnectListeners) {
+          cb();
+        }
+      }
+      _firstConnect = false;
     });
 
     _socket!.onDisconnect((_) {
@@ -125,6 +136,14 @@ class SocketService {
         );
       }
     });
+
+    _socket!.on('snap:viewed', (data) {
+      final messageId = (data['messageId'] ?? '').toString();
+      final viewedBy = (data['viewedBy'] ?? '').toString();
+      for (final listener in _snapViewedListeners) {
+        listener(messageId, viewedBy);
+      }
+    });
   }
 
   void disconnect() {
@@ -168,6 +187,9 @@ class SocketService {
   void onLikedYou(LikedYouCallback callback) => _likedYouListeners.add(callback);
   void onChatNotification(ChatNotificationCallback callback) =>
       _chatNotificationListeners.add(callback);
+  void onSnapViewed(SnapViewedCallback callback) =>
+      _snapViewedListeners.add(callback);
+  void onReconnect(VoidCallback callback) => _reconnectListeners.add(callback);
 
   void removeMessageListener(MessageCallback callback) =>
       _messageListeners.remove(callback);
@@ -181,4 +203,8 @@ class SocketService {
       _likedYouListeners.remove(callback);
   void removeChatNotificationListener(ChatNotificationCallback callback) =>
       _chatNotificationListeners.remove(callback);
+  void removeSnapViewedListener(SnapViewedCallback callback) =>
+      _snapViewedListeners.remove(callback);
+  void removeReconnectListener(VoidCallback callback) =>
+      _reconnectListeners.remove(callback);
 }

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -6,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../models/match_model.dart';
-import '../models/message_model.dart';
+import '../models/message_model.dart' hide MediaType;
 import '../utils/app_config.dart';
 
 class ApiService {
@@ -268,6 +269,40 @@ class ApiService {
       ),
     });
     final response = await _dio.post('/messages/$matchId/photo', data: formData);
+    return MessageModel.fromJson(response.data['message']);
+  }
+
+  Future<MessageModel> sendAudioMessage(String matchId, Uint8List bytes, int durationSeconds, String filename) async {
+    final ext = filename.contains('.') ? filename.split('.').last.toLowerCase() : 'webm';
+    final mimeStr = {
+      'm4a': 'audio/mp4', 'aac': 'audio/aac',
+      'mp3': 'audio/mpeg', 'ogg': 'audio/ogg',
+      'wav': 'audio/wav', 'webm': 'audio/webm',
+    }[ext] ?? 'audio/webm';
+
+    final formData = FormData.fromMap({
+      'audio': MultipartFile.fromBytes(bytes, filename: filename, contentType: MediaType.parse(mimeStr)),
+      'duration': durationSeconds.toString(),
+    });
+    final response = await _dio.post('/messages/$matchId/audio', data: formData);
+    return MessageModel.fromJson(response.data['message']);
+  }
+
+  Future<MessageModel> sendSnapMessage(String matchId, XFile file) async {
+    final bytes = await file.readAsBytes();
+    final formData = FormData.fromMap({
+      'snap': MultipartFile.fromBytes(
+        bytes,
+        filename: _safeFilename(file.name, 'snap.jpg'),
+        contentType: MediaType.parse(_mimeType(file)),
+      ),
+    });
+    final response = await _dio.post('/messages/$matchId/snap', data: formData);
+    return MessageModel.fromJson(response.data['message']);
+  }
+
+  Future<MessageModel> viewSnap(String messageId) async {
+    final response = await _dio.post('/messages/snap/$messageId/view');
     return MessageModel.fromJson(response.data['message']);
   }
 

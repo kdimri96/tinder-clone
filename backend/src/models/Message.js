@@ -13,13 +13,31 @@ const messageSchema = new mongoose.Schema({
   },
   text: {
     type: String,
-    required: true,
+    default: '',
     maxlength: [2000, 'Message cannot exceed 2000 characters'],
   },
   mediaUrl: {
     type: String,
     default: null,
   },
+  // 'image' | 'audio' | 'snap'  (null = plain text)
+  mediaType: {
+    type: String,
+    enum: ['image', 'audio', 'snap', null],
+    default: null,
+  },
+  audioDuration: {
+    type: Number,   // seconds
+    default: null,
+  },
+  isSnap: {
+    type: Boolean,
+    default: false,
+  },
+  snapViewedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
   readBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

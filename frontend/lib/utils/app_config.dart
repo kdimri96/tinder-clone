@@ -4,17 +4,16 @@ import 'package:flutter/foundation.dart'
 /// Centralised runtime configuration.
 ///
 /// Build-time overrides (highest priority):
-///   flutter build web  --dart-define=API_URL=https://api.myapp.com
-///   flutter build apk  --dart-define=API_URL=https://api.myapp.com
-///                      --dart-define=SOCKET_URL=https://api.myapp.com
-///                      --dart-define=MEDIA_URL=https://api.myapp.com
+///   flutter build web  --dart-define=API_BASE_URL=https://api.myapp.com/api
+///   flutter build apk  --dart-define=API_BASE_URL=https://api.myapp.com/api
+///                      --dart-define=SOCKET_BASE_URL=https://api.myapp.com
 class AppConfig {
   // Injected at build time via --dart-define; empty string when not provided.
-  static const String _envApiUrl = String.fromEnvironment('API_URL');
-  static const String _envSocketUrl = String.fromEnvironment('SOCKET_URL');
-  static const String _envMediaUrl = String.fromEnvironment('MEDIA_URL');
+  static const String _envApiUrl = String.fromEnvironment('API_BASE_URL');
+  static const String _envSocketUrl = String.fromEnvironment('SOCKET_BASE_URL');
+  static const String _envMediaUrl = String.fromEnvironment('MEDIA_BASE_URL');
 
-  // Derive socket/media from API_URL if not explicitly set
+  // Derive socket/media from API_BASE_URL if not explicitly set
   static String get _baseFromApi {
     if (_envApiUrl.isNotEmpty) {
       // Strip /api suffix to get the base server URL

@@ -26,32 +26,44 @@ void main() async {
   runApp(const KneedYouApp());
 }
 
-class KneedYouApp extends StatelessWidget {
+class KneedYouApp extends StatefulWidget {
   const KneedYouApp({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final apiService = ApiService();
-    final socketService = SocketService();
+  State<KneedYouApp> createState() => _KneedYouAppState();
+}
 
+class _KneedYouAppState extends State<KneedYouApp> {
+  late final ApiService _apiService;
+  late final SocketService _socketService;
+
+  @override
+  void initState() {
+    super.initState();
+    _apiService = ApiService();
+    _socketService = SocketService();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<ApiService>.value(value: apiService),
-        Provider<SocketService>.value(value: socketService),
+        Provider<ApiService>.value(value: _apiService),
+        Provider<SocketService>.value(value: _socketService),
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(apiService, socketService),
+          create: (_) => AuthProvider(_apiService, _socketService),
         ),
         ChangeNotifierProvider(
-          create: (_) => DiscoveryProvider(apiService),
+          create: (_) => DiscoveryProvider(_apiService),
         ),
         ChangeNotifierProvider(
-          create: (_) => MatchProvider(apiService, socketService),
+          create: (_) => MatchProvider(_apiService, _socketService),
         ),
         ChangeNotifierProvider(
-          create: (_) => ChatProvider(apiService, socketService),
+          create: (_) => ChatProvider(_apiService, _socketService),
         ),
         ChangeNotifierProvider(
-          create: (_) => PremiumProvider(apiService),
+          create: (_) => PremiumProvider(_apiService),
         ),
       ],
       child: MaterialApp(

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../providers/auth_provider.dart';
 import '../providers/discovery_provider.dart';
+import '../providers/match_provider.dart';
 import '../providers/premium_provider.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
@@ -23,6 +24,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   final CardSwiperController _controller = CardSwiperController();
   bool _showMatchModal = false;
   UserModel? _matchedUser;
+  String? _matchId;
   bool _deckExhausted = false;
 
   @override
@@ -107,21 +109,41 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     if (isMatch && mounted) {
       final matchedUser = provider.matchedUser;
       if (matchedUser != null) {
+        // Immediately refresh the Matches tab without a loading spinner
+        context.read<MatchProvider>().silentRefresh();
         setState(() {
           _matchedUser = matchedUser;
+          _matchId = provider.matchId;
           _showMatchModal = true;
         });
       }
     }
   }
 
+  void _showSuperLikesExhaustedSnackbar() {
+    AppNotification.show(
+      context,
+      message: 'No Super Likes left today. Come back tomorrow!',
+      backgroundColor: AppTheme.superLike.withOpacity(0.95),
+      textColor: Colors.white,
+      icon: Icons.star_rounded,
+    );
+  }
+
   Future<void> _handleSuperLike(UserModel user) async {
-    final isMatch = await context.read<DiscoveryProvider>().superLike(user.id);
-    if (isMatch && mounted) {
-      final matchedUser = context.read<DiscoveryProvider>().matchedUser;
+    final provider = context.read<DiscoveryProvider>();
+    if (!provider.hasSuperLikesLeft) {
+      _showSuperLikesExhaustedSnackbar();
+      return;
+    }
+    final isMatch = await provider.superLike(user.id);
+    if (mounted) {
+      final matchedUser = provider.matchedUser;
       if (matchedUser != null) {
+        context.read<MatchProvider>().silentRefresh();
         setState(() {
           _matchedUser = matchedUser;
+          _matchId = provider.matchId;
           _showMatchModal = true;
         });
       }
@@ -310,15 +332,28 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
             child: MatchModal(
               currentUser: context.read<AuthProvider>().user!,
               matchedUser: _matchedUser!,
-              matchId: '',
+              matchId: _matchId ?? '',
               onKeepSwiping: () {
-                setState(() => _showMatchModal = false);
+                setState(() {
+                  _showMatchModal = false;
+                  _matchId = null;
+                });
                 context.read<DiscoveryProvider>().clearMatch();
               },
               onSendMessage: () {
-                setState(() => _showMatchModal = false);
+                final matchedUser = _matchedUser!;
+                final matchId = _matchId;
+                setState(() {
+                  _showMatchModal = false;
+                  _matchId = null;
+                });
                 context.read<DiscoveryProvider>().clearMatch();
-                Navigator.pushNamed(context, '/matches');
+                if (matchId != null && matchId.isNotEmpty) {
+                  Navigator.pushNamed(context, '/chat',
+                      arguments: {'matchId': matchId, 'user': matchedUser});
+                } else {
+                  Navigator.pushNamed(context, '/matches');
+                }
               },
             ),
           ),
@@ -330,6 +365,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     return Consumer2<DiscoveryProvider, PremiumProvider>(
       builder: (context, discovery, premium, _) {
         final canLike = premium.isUnlimitedLikes || discovery.hasLikesLeft;
+        final canSuperLike = discovery.hasSuperLikesLeft;
+        final superLikesLeft = discovery.superLikesRemaining;
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -345,11 +382,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               size: 46,
               onPressed: _handleRewind,
             ),
-            _ActionButton(
-              icon: Icons.star,
-              color: AppTheme.superLike,
-              size: 46,
-              onPressed: () => _controller.swipeTop(),
+            _SuperLikeButton(
+              count: superLikesLeft,
+              enabled: canSuperLike,
+              onPressed: canSuperLike
+                  ? () => _controller.swipeTop()
+                  : _showSuperLikesExhaustedSnackbar,
             ),
             _ActionButton(
               icon: Icons.favorite,
@@ -392,6 +430,66 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
               minimumSize: const Size(160, 46),
             ),
             child: const Text('Refresh'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SuperLikeButton extends StatelessWidget {
+  final int count;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  const _SuperLikeButton({
+    required this.count,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled ? AppTheme.superLike : Colors.grey.shade400;
+    return GestureDetector(
+      onTap: onPressed,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(Icons.star_rounded, color: color, size: 23),
+          ),
+          Positioned(
+            top: -4,
+            right: -4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: enabled ? AppTheme.superLike : Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '$count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
           ),
         ],
       ),

@@ -8,6 +8,8 @@ class MatchModel {
   final MessageModel? lastMessage;
   final DateTime createdAt;
   final DateTime? lastMessageAt;
+  final bool isSuperLike;
+  final String? superLikeBy;
 
   MatchModel({
     required this.id,
@@ -16,6 +18,8 @@ class MatchModel {
     this.lastMessage,
     required this.createdAt,
     this.lastMessageAt,
+    this.isSuperLike = false,
+    this.superLikeBy,
   });
 
   MatchModel copyWith({MessageModel? lastMessage, DateTime? lastMessageAt}) {
@@ -26,6 +30,8 @@ class MatchModel {
       lastMessage: lastMessage ?? this.lastMessage,
       createdAt: createdAt,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      isSuperLike: isSuperLike,
+      superLikeBy: superLikeBy,
     );
   }
 
@@ -50,6 +56,8 @@ class MatchModel {
       lastMessageAt: json['lastMessageAt'] != null
           ? DateTime.tryParse(json['lastMessageAt'])
           : null,
+      isSuperLike: json['isSuperLike'] == true,
+      superLikeBy: json['superLikeBy']?.toString(),
     );
   }
 }

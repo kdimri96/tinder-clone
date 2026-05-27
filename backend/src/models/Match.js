@@ -20,6 +20,15 @@ const matchSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  isSuperLike: {
+    type: Boolean,
+    default: false,
+  },
+  superLikeBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
 }, {
   timestamps: true,
 });

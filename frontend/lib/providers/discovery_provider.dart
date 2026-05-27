@@ -5,8 +5,11 @@ import '../services/api_service.dart';
 import '../utils/api_error.dart';
 
 const int _dailyLikeLimit = 1000;
+const int _dailySuperLikeLimit = 10;
 const String _prefLikeCount = 'daily_like_count';
 const String _prefLikeDate = 'daily_like_date';
+const String _prefSuperLikeCount = 'daily_super_like_count';
+const String _prefSuperLikeDate = 'daily_super_like_date';
 const String _prefRewindDate = 'last_rewind_date';
 
 class DiscoveryProvider extends ChangeNotifier {
@@ -18,11 +21,14 @@ class DiscoveryProvider extends ChangeNotifier {
   int _page = 1;
   String? _error;
   UserModel? _matchedUser;
+  String? _matchId;
   int _dailyLikesUsed = 0;
+  int _dailySuperLikesUsed = 0;
   bool _expandedSearch = false;
 
   DiscoveryProvider(this._api) {
     _loadDailyLikeCount();
+    _loadDailySuperLikeCount();
   }
 
   List<UserModel> get users => _users;
@@ -30,9 +36,12 @@ class DiscoveryProvider extends ChangeNotifier {
   bool get hasMore => _hasMore;
   String? get error => _error;
   UserModel? get matchedUser => _matchedUser;
+  String? get matchId => _matchId;
   int get dailyLikesUsed => _dailyLikesUsed;
   int get dailyLikesRemaining => (_dailyLikeLimit - _dailyLikesUsed).clamp(0, _dailyLikeLimit);
   bool get hasLikesLeft => _dailyLikesUsed < _dailyLikeLimit;
+  int get superLikesRemaining => (_dailySuperLikeLimit - _dailySuperLikesUsed).clamp(0, _dailySuperLikeLimit);
+  bool get hasSuperLikesLeft => _dailySuperLikesUsed < _dailySuperLikeLimit;
   bool get expandedSearch => _expandedSearch;
 
   Future<void> _loadDailyLikeCount() async {
@@ -55,6 +64,28 @@ class DiscoveryProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_prefLikeCount, _dailyLikesUsed);
     await prefs.setString(_prefLikeDate, _todayString());
+    notifyListeners();
+  }
+
+  Future<void> _loadDailySuperLikeCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = _todayString();
+    final savedDate = prefs.getString(_prefSuperLikeDate) ?? '';
+    if (savedDate != today) {
+      await prefs.setInt(_prefSuperLikeCount, 0);
+      await prefs.setString(_prefSuperLikeDate, today);
+      _dailySuperLikesUsed = 0;
+    } else {
+      _dailySuperLikesUsed = prefs.getInt(_prefSuperLikeCount) ?? 0;
+    }
+    notifyListeners();
+  }
+
+  Future<void> _incrementSuperLikeCount() async {
+    _dailySuperLikesUsed++;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_prefSuperLikeCount, _dailySuperLikesUsed);
+    await prefs.setString(_prefSuperLikeDate, _todayString());
     notifyListeners();
   }
 
@@ -113,6 +144,7 @@ class DiscoveryProvider extends ChangeNotifier {
       // index. Removing while a swipe is in progress shifts indices and makes
       // subsequent cards point to the wrong user or appear empty.
       if (result['match'] != null) {
+        _matchId = result['match']['_id']?.toString();
         _matchedUser = UserModel.fromJson(result['match']['users']
             .firstWhere((u) => u['_id'] == targetId, orElse: () => result['match']['users'][0]));
         notifyListeners();
@@ -138,9 +170,17 @@ class DiscoveryProvider extends ChangeNotifier {
   }
 
   Future<bool> superLike(String targetId) async {
+    if (!hasSuperLikesLeft) {
+      _error = 'No Super Likes left today. Come back tomorrow!';
+      notifyListeners();
+      return false;
+    }
     try {
       final result = await _api.swipe(targetId: targetId, direction: 'superlike');
+      await _incrementSuperLikeCount();
+      // Superlike always creates an instant match on the backend
       if (result['match'] != null) {
+        _matchId = result['match']['_id']?.toString();
         _matchedUser = UserModel.fromJson(result['match']['users']
             .firstWhere((u) => u['_id'] == targetId, orElse: () => result['match']['users'][0]));
         notifyListeners();
@@ -175,6 +215,7 @@ class DiscoveryProvider extends ChangeNotifier {
 
   void clearMatch() {
     _matchedUser = null;
+    _matchId = null;
     notifyListeners();
   }
 
@@ -189,8 +230,10 @@ class DiscoveryProvider extends ChangeNotifier {
     _isLoading = false;
     _error = null;
     _matchedUser = null;
+    _matchId = null;
     _expandedSearch = false;
     await _loadDailyLikeCount();
+    await _loadDailySuperLikeCount();
     notifyListeners();
   }
 }

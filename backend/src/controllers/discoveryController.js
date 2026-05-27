@@ -110,17 +110,22 @@ const getLikedYou = async (req, res) => {
 
     const matchedUserIds = await Match.find({ users: req.userId }).distinct('users');
 
-    const likedSwipes = await Swipe.find({
+    const query = {
       targetId: req.userId,
       direction: { $in: ['like', 'superlike'] },
       swiperId: { $nin: matchedUserIds },
-    })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('swiperId', 'name photos age bio job');
+    };
 
-    res.json({ users: likedSwipes.map(s => s.swiperId), total: likedSwipes.length });
+    const [likedSwipes, total] = await Promise.all([
+      Swipe.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('swiperId', 'name photos age bio job'),
+      Swipe.countDocuments(query),
+    ]);
+
+    res.json({ users: likedSwipes.map(s => s.swiperId), total });
   } catch (error) {
     res.status(500).json({ message: parseError(error) });
   }

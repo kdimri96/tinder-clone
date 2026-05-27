@@ -40,9 +40,11 @@ class MatchesScreen extends StatelessWidget {
           }
 
           final myId = authProvider.user?.id ?? '';
-          final newMatches = matchProvider.matches
-              .where((m) => m.lastMessage == null)
-              .toList();
+          // Super-like matches (no messages yet) sorted first
+          final newMatches = [
+            ...matchProvider.matches.where((m) => m.lastMessage == null && m.isSuperLike),
+            ...matchProvider.matches.where((m) => m.lastMessage == null && !m.isSuperLike),
+          ];
           final conversations = matchProvider.matches
               .where((m) => m.lastMessage != null)
               .toList();
@@ -188,6 +190,7 @@ class _NewMatchAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final other = match.otherUser;
     if (other == null) return const SizedBox();
+    final isSuperLike = match.isSuperLike;
 
     return GestureDetector(
       onTap: () => Navigator.pushNamed(
@@ -196,19 +199,24 @@ class _NewMatchAvatar extends StatelessWidget {
         arguments: {'matchId': match.id, 'user': other},
       ),
       child: Container(
-        width: 76,
+        width: 80,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Stack(
+              clipBehavior: Clip.none,
               children: [
                 Container(
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: AppTheme.primaryGradient,
+                    gradient: isSuperLike
+                        ? const LinearGradient(
+                            colors: [Color(0xFF38BDF8), Color(0xFF0EA5E9)],
+                          )
+                        : AppTheme.primaryGradient,
                   ),
                   padding: const EdgeInsets.all(2.5),
                   child: ClipOval(
@@ -225,6 +233,37 @@ class _NewMatchAvatar extends StatelessWidget {
                           ),
                   ),
                 ),
+                if (isSuperLike)
+                  Positioned(
+                    bottom: -4,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.superLike,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.star_rounded, color: Colors.white, size: 10),
+                            SizedBox(width: 2),
+                            Text(
+                              'Super',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 if (other.isOnline)
                   Positioned(
                     bottom: 1,
@@ -241,13 +280,13 @@ class _NewMatchAvatar extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Text(
               other.name,
-              style: const TextStyle(
-                color: AppTheme.textDark,
+              style: TextStyle(
+                color: isSuperLike ? AppTheme.superLike : AppTheme.textDark,
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -319,13 +358,18 @@ class _ConversationTile extends StatelessWidget {
         ),
         title: Row(
           children: [
+            if (match.isSuperLike)
+              const Padding(
+                padding: EdgeInsets.only(right: 4),
+                child: Icon(Icons.star_rounded, color: AppTheme.superLike, size: 14),
+              ),
             Expanded(
               child: Text(
                 other.name,
                 style: TextStyle(
                   fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600,
                   fontSize: 15,
-                  color: AppTheme.textDark,
+                  color: match.isSuperLike ? AppTheme.superLike : AppTheme.textDark,
                 ),
               ),
             ),

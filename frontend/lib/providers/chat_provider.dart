@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/message_model.dart';
@@ -24,6 +25,7 @@ class ChatProvider extends ChangeNotifier {
   ChatProvider(this._api, this._socket) {
     _socket.onMessage(_onMessage);
     _socket.onTyping(_onTyping);
+    _socket.onSnapViewed(_onSnapViewed);
   }
 
   List<MessageModel> getMessages(String matchId) => _messages[matchId] ?? [];
@@ -125,6 +127,102 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> sendAudio(String matchId, Uint8List bytes, int durationSeconds, String filename) async {
+    _error = null;
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final optimistic = MessageModel(
+      id: tempId,
+      matchId: matchId,
+      senderId: 'me',
+      text: '🎵 Voice message',
+      mediaType: MediaType.audio,
+      audioDuration: durationSeconds,
+      createdAt: DateTime.now(),
+      readBy: ['me'],
+    );
+    _messages[matchId] ??= [];
+    _messages[matchId]!.add(optimistic);
+    notifyListeners();
+
+    try {
+      final sent = await _api.sendAudioMessage(matchId, bytes, durationSeconds, filename);
+      final msgs = _messages[matchId]!;
+      msgs.removeWhere((m) => m.id == sent.id);
+      final idx = msgs.indexWhere((m) => m.id == tempId);
+      if (idx >= 0) msgs[idx] = sent;
+      notifyListeners();
+    } catch (e) {
+      _messages[matchId]!.removeWhere((m) => m.id == tempId);
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> sendSnap(String matchId, XFile file) async {
+    _error = null;
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final optimistic = MessageModel(
+      id: tempId,
+      matchId: matchId,
+      senderId: 'me',
+      text: '📸 Snap',
+      mediaType: MediaType.snap,
+      isSnap: true,
+      createdAt: DateTime.now(),
+      readBy: ['me'],
+    );
+    _messages[matchId] ??= [];
+    _messages[matchId]!.add(optimistic);
+    notifyListeners();
+
+    try {
+      final sent = await _api.sendSnapMessage(matchId, file);
+      final msgs = _messages[matchId]!;
+      msgs.removeWhere((m) => m.id == sent.id);
+      final idx = msgs.indexWhere((m) => m.id == tempId);
+      if (idx >= 0) msgs[idx] = sent;
+      notifyListeners();
+    } catch (e) {
+      _messages[matchId]!.removeWhere((m) => m.id == tempId);
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> viewSnap(String matchId, String messageId) async {
+    try {
+      final updated = await _api.viewSnap(messageId);
+      _updateMessage(matchId, updated);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  void _updateMessage(String matchId, MessageModel updated) {
+    final msgs = _messages[matchId];
+    if (msgs == null) return;
+    final idx = msgs.indexWhere((m) => m.id == updated.id);
+    if (idx >= 0) {
+      msgs[idx] = updated;
+      notifyListeners();
+    }
+  }
+
+  void _onSnapViewed(String messageId, String viewedBy) {
+    for (final msgs in _messages.values) {
+      final idx = msgs.indexWhere((m) => m.id == messageId);
+      if (idx >= 0) {
+        final m = msgs[idx];
+        if (!m.snapViewedBy.contains(viewedBy)) {
+          msgs[idx] = m.copyWith(snapViewedBy: [...m.snapViewedBy, viewedBy]);
+          notifyListeners();
+        }
+        break;
+      }
+    }
+  }
+
   void startTyping(String matchId) => _socket.startTyping(matchId);
   void stopTyping(String matchId) => _socket.stopTyping(matchId);
 
@@ -161,6 +259,7 @@ class ChatProvider extends ChangeNotifier {
     }
     _socket.removeMessageListener(_onMessage);
     _socket.removeTypingListener(_onTyping);
+    _socket.removeSnapViewedListener(_onSnapViewed);
     super.dispose();
   }
 }

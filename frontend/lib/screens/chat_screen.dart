@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:record/record.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../models/user_model.dart';
@@ -33,23 +35,32 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? _typingTimer;
   bool _isTyping = false;
   bool _isOtherUserOnline = false;
+  bool _hasText = false;
+
+  // Audio recording
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _isRecording = false;
+  int _recordingSeconds = 0;
+  Timer? _recordingTimer;
+  final List<int> _audioBytes = [];
+  StreamSubscription<Uint8List>? _audioSub;
 
   @override
   void initState() {
     super.initState();
-    // Tell HomeScreen this conversation is active so it suppresses duplicate
-    // message notifications for this chat.
     context.read<ChatProvider>().setActiveChat(widget.matchId);
 
-    // Initialise online status from the socket's in-memory map (covers the
-    // case where presence:online fired before this screen was opened).
     _isOtherUserOnline = widget.otherUser.isOnline ||
         context.read<SocketService>().isUserOnline(widget.otherUser.id);
 
     context.read<SocketService>().onPresence(_onPresence);
 
+    _textController.addListener(() {
+      final hasText = _textController.text.trim().isNotEmpty;
+      if (hasText != _hasText) setState(() => _hasText = hasText);
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Always reload so real-time messages since last open are fetched.
       context.read<ChatProvider>().loadMessages(widget.matchId);
     });
   }
@@ -61,6 +72,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _textController.dispose();
     _scrollController.dispose();
     _typingTimer?.cancel();
+    _recordingTimer?.cancel();
+    _audioSub?.cancel();
+    _recorder.dispose();
     context.read<ChatProvider>().stopTyping(widget.matchId);
     super.dispose();
   }
@@ -100,11 +114,14 @@ class _ChatScreenState extends State<ChatScreen> {
         await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (picked == null || !mounted) return;
 
-    // Show WhatsApp-style preview & confirmation before sending
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => _ImagePreviewDialog(file: picked),
+      builder: (_) => _MediaPreviewDialog(
+        file: picked,
+        title: 'Send photo?',
+        sendLabel: 'Send Photo',
+      ),
     );
 
     if (confirmed != true || !mounted) return;
@@ -119,6 +136,103 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _sendSnap() async {
+    final picker = ImagePicker();
+    final picked =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked == null || !mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => _MediaPreviewDialog(
+        file: picked,
+        title: 'Send as Snap?',
+        subtitle: 'Recipient can only view this once',
+        sendLabel: 'Send Snap',
+        isSnap: true,
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    await context.read<ChatProvider>().sendSnap(widget.matchId, picked);
+    if (mounted) {
+      final err = context.read<ChatProvider>().error;
+      if (err != null) {
+        AppNotification.error(context, 'Failed to send snap: $err');
+      } else {
+        _scrollToBottom();
+      }
+    }
+  }
+
+  Future<void> _startRecording() async {
+    final hasPermission = await _recorder.hasPermission();
+    if (!hasPermission || !mounted) {
+      AppNotification.error(context, 'Microphone permission denied');
+      return;
+    }
+
+    _audioBytes.clear();
+    _recordingSeconds = 0;
+
+    final encoder = kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc;
+    final stream = await _recorder.startStream(
+      RecordConfig(encoder: encoder, sampleRate: 44100, bitRate: 128000),
+    );
+    _audioSub = stream.listen((data) => _audioBytes.addAll(data));
+
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _recordingSeconds++);
+      if (_recordingSeconds >= 60) _stopAndSendRecording();
+    });
+
+    setState(() => _isRecording = true);
+  }
+
+  Future<void> _stopAndSendRecording() async {
+    if (!_isRecording) return;
+    _recordingTimer?.cancel();
+    _recordingTimer = null;
+
+    await _recorder.stop();
+    await _audioSub?.cancel();
+    _audioSub = null;
+
+    final duration = _recordingSeconds;
+    setState(() => _isRecording = false);
+
+    if (_audioBytes.isEmpty || !mounted) return;
+
+    final bytes = Uint8List.fromList(_audioBytes);
+    final filename = kIsWeb ? 'voice.webm' : 'voice.aac';
+
+    await context
+        .read<ChatProvider>()
+        .sendAudio(widget.matchId, bytes, duration, filename);
+
+    if (mounted) {
+      final err = context.read<ChatProvider>().error;
+      if (err != null) {
+        AppNotification.error(context, 'Failed to send voice message: $err');
+      } else {
+        _scrollToBottom();
+      }
+    }
+  }
+
+  Future<void> _cancelRecording() async {
+    if (!_isRecording) return;
+    _recordingTimer?.cancel();
+    _recordingTimer = null;
+    await _recorder.cancel();
+    await _audioSub?.cancel();
+    _audioSub = null;
+    _audioBytes.clear();
+    setState(() => _isRecording = false);
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -129,6 +243,12 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+  String _formatDuration(int seconds) {
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -144,58 +264,58 @@ class _ChatScreenState extends State<ChatScreen> {
           onTap: () => Navigator.pushNamed(context, '/user-profile',
               arguments: widget.otherUser),
           child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: widget.otherUser.firstPhoto.isNotEmpty
-                  ? NetworkImageWidget(
-                      imageUrl: widget.otherUser.firstPhoto,
-                      width: 40,
-                      height: 40,
-                    )
-                  : Container(
-                      width: 40,
-                      height: 40,
-                      color: AppTheme.surface2,
-                      child:
-                          const Icon(Icons.person, color: AppTheme.textMedium),
-                    ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.otherUser.name,
-                    style: const TextStyle(
-                        fontSize: 16, color: AppTheme.textDark)),
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _isOtherUserOnline
-                            ? AppTheme.success
-                            : AppTheme.textLight,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: widget.otherUser.firstPhoto.isNotEmpty
+                    ? NetworkImageWidget(
+                        imageUrl: widget.otherUser.firstPhoto,
+                        width: 40,
+                        height: 40,
+                      )
+                    : Container(
+                        width: 40,
+                        height: 40,
+                        color: AppTheme.surface2,
+                        child: const Icon(Icons.person,
+                            color: AppTheme.textMedium),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _isOtherUserOnline ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        color: _isOtherUserOnline
-                            ? AppTheme.success
-                            : AppTheme.textLight,
-                        fontSize: 11,
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.otherUser.name,
+                      style: const TextStyle(
+                          fontSize: 16, color: AppTheme.textDark)),
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _isOtherUserOnline
+                              ? AppTheme.success
+                              : AppTheme.textLight,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _isOtherUserOnline ? 'Online' : 'Offline',
+                        style: TextStyle(
+                          color: _isOtherUserOnline
+                              ? AppTheme.success
+                              : AppTheme.textLight,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
           PopupMenuButton<String>(
@@ -216,7 +336,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 value: 'view_profile',
                 child: Row(
                   children: [
-                    Icon(Icons.person_outline, color: AppTheme.primary, size: 18),
+                    Icon(Icons.person_outline,
+                        color: AppTheme.primary, size: 18),
                     SizedBox(width: 10),
                     Text('View Profile',
                         style: TextStyle(color: AppTheme.textDark)),
@@ -238,8 +359,6 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      // resizeToAvoidBottomInset pushes the whole Column up when the keyboard
-      // appears so the input bar is always visible above it.
       resizeToAvoidBottomInset: true,
       body: Column(
         children: [
@@ -288,7 +407,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   );
                 }
 
-                // Scroll to bottom whenever messages change
                 WidgetsBinding.instance
                     .addPostFrameCallback((_) => _scrollToBottom());
 
@@ -338,98 +456,336 @@ class _ChatScreenState extends State<ChatScreen> {
             },
           ),
 
-          // Input bar — SafeArea bottom so it clears the Android nav bar
-          SafeArea(
-            top: false,
-            child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            decoration: const BoxDecoration(
-              color: AppTheme.surface,
-              border: Border(top: BorderSide(color: AppTheme.surface2)),
+          // Recording bar (shown instead of input bar when recording)
+          if (_isRecording)
+            SafeArea(
+              top: false,
+              child: _RecordingBar(
+                seconds: _recordingSeconds,
+                formatDuration: _formatDuration,
+                onCancel: _cancelRecording,
+                onSend: _stopAndSendRecording,
+              ),
+            )
+          else
+            // Normal input bar
+            SafeArea(
+              top: false,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                decoration: const BoxDecoration(
+                  color: AppTheme.surface,
+                  border: Border(top: BorderSide(color: AppTheme.surface2)),
+                ),
+                child: Row(
+                  children: [
+                    // Gallery photo button
+                    _InputIconButton(
+                      icon: Icons.image_outlined,
+                      onTap: _sendPhoto,
+                    ),
+                    const SizedBox(width: 6),
+                    // Snap button
+                    _InputIconButton(
+                      icon: Icons.camera_alt_outlined,
+                      onTap: _sendSnap,
+                    ),
+                    const SizedBox(width: 8),
+                    // Text field
+                    Expanded(
+                      child: TextField(
+                        controller: _textController,
+                        onChanged: _onTypingChanged,
+                        maxLines: 4,
+                        minLines: 1,
+                        style: const TextStyle(
+                            color: AppTheme.textDark, fontSize: 15),
+                        decoration: InputDecoration(
+                          hintText: 'Type a message...',
+                          hintStyle:
+                              const TextStyle(color: AppTheme.textLight),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          filled: true,
+                          fillColor: AppTheme.surface2,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: const BorderSide(
+                                color: AppTheme.primary, width: 1.5),
+                          ),
+                        ),
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Send button (text) or Mic button (no text)
+                    if (_hasText)
+                      GestureDetector(
+                        onTap: _sendMessage,
+                        child: Container(
+                          width: 46,
+                          height: 46,
+                          decoration: const BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.send_rounded,
+                              color: Colors.white, size: 20),
+                        ),
+                      )
+                    else
+                      GestureDetector(
+                        onTap: _startRecording,
+                        child: Container(
+                          width: 46,
+                          height: 46,
+                          decoration: const BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.mic_rounded,
+                              color: Colors.white, size: 22),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _sendPhoto,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.surface2,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.image_outlined,
-                        color: AppTheme.textMedium, size: 20),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _textController,
-                    onChanged: _onTypingChanged,
-                    maxLines: 4,
-                    minLines: 1,
-                    style: const TextStyle(
-                        color: AppTheme.textDark, fontSize: 15),
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      hintStyle:
-                          const TextStyle(color: AppTheme.textLight),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      filled: true,
-                      fillColor: AppTheme.surface2,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: const BorderSide(
-                            color: AppTheme.primary, width: 1.5),
-                      ),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
-                    width: 46,
-                    height: 46,
-                    decoration: const BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.send_rounded,
-                        color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ), // SafeArea
         ],
       ),
     );
   }
 }
 
-// ── Image preview dialog (shown before sending) ──────────────────────────────
-class _ImagePreviewDialog extends StatefulWidget {
-  final XFile file;
-  const _ImagePreviewDialog({required this.file});
+// ── Recording bar ─────────────────────────────────────────────────────────────
+class _RecordingBar extends StatelessWidget {
+  final int seconds;
+  final String Function(int) formatDuration;
+  final VoidCallback onCancel;
+  final VoidCallback onSend;
+
+  const _RecordingBar({
+    required this.seconds,
+    required this.formatDuration,
+    required this.onCancel,
+    required this.onSend,
+  });
 
   @override
-  State<_ImagePreviewDialog> createState() => _ImagePreviewDialogState();
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      decoration: const BoxDecoration(
+        color: AppTheme.surface,
+        border: Border(top: BorderSide(color: AppTheme.surface2)),
+      ),
+      child: Row(
+        children: [
+          // Cancel
+          GestureDetector(
+            onTap: onCancel,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.error.withOpacity(0.1),
+              ),
+              child: const Icon(Icons.delete_outline,
+                  color: AppTheme.error, size: 20),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Pulsing dot + timer
+          _RecordingPulse(),
+          const SizedBox(width: 8),
+          Text(
+            formatDuration(seconds),
+            style: const TextStyle(
+              color: AppTheme.textDark,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Animated waveform
+          const Expanded(child: _RecordingWaveform()),
+          const SizedBox(width: 12),
+          // Send
+          GestureDetector(
+            onTap: onSend,
+            child: Container(
+              width: 46,
+              height: 46,
+              decoration: const BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.send_rounded,
+                  color: Colors.white, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
+// ── Pulsing red recording indicator ──────────────────────────────────────────
+class _RecordingPulse extends StatefulWidget {
+  const _RecordingPulse();
+
+  @override
+  State<_RecordingPulse> createState() => _RecordingPulseState();
+}
+
+class _RecordingPulseState extends State<_RecordingPulse>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800))
+      ..repeat(reverse: true);
+    _anim = Tween(begin: 0.4, end: 1.0).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppTheme.error.withOpacity(_anim.value),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Animated waveform bars for recording ─────────────────────────────────────
+class _RecordingWaveform extends StatefulWidget {
+  const _RecordingWaveform();
+
+  @override
+  State<_RecordingWaveform> createState() => _RecordingWaveformState();
+}
+
+class _RecordingWaveformState extends State<_RecordingWaveform>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  static const int _bars = 20;
+  static const List<double> _heights = [
+    0.3, 0.7, 0.5, 0.9, 0.4, 0.8, 0.6, 0.3, 0.7, 0.5,
+    0.9, 0.4, 0.8, 0.6, 0.3, 0.7, 0.5, 0.9, 0.4, 0.8,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 600))
+      ..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: List.generate(_bars, (i) {
+            final phase = (_ctrl.value + i * 0.07) % 1.0;
+            final h = _heights[i] * (0.4 + phase * 0.6);
+            return Container(
+              width: 2.5,
+              height: 20 * h,
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+// ── Small icon button for input bar ──────────────────────────────────────────
+class _InputIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _InputIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: const BoxDecoration(
+          color: AppTheme.surface2,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: AppTheme.textMedium, size: 20),
+      ),
+    );
+  }
+}
+
+// ── Media preview dialog (photo or snap) ─────────────────────────────────────
+class _MediaPreviewDialog extends StatefulWidget {
+  final XFile file;
+  final String title;
+  final String? subtitle;
+  final String sendLabel;
+  final bool isSnap;
+
+  const _MediaPreviewDialog({
+    required this.file,
+    required this.title,
+    this.subtitle,
+    required this.sendLabel,
+    this.isSnap = false,
+  });
+
+  @override
+  State<_MediaPreviewDialog> createState() => _MediaPreviewDialogState();
+}
+
+class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
   Uint8List? _bytes;
 
   @override
@@ -453,24 +809,45 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
             // Header
             Container(
               color: AppTheme.surface,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  const Icon(Icons.image_outlined, color: AppTheme.textMedium, size: 20),
+                  Icon(
+                    widget.isSnap
+                        ? Icons.camera_alt_outlined
+                        : Icons.image_outlined,
+                    color: widget.isSnap ? Colors.deepOrange : AppTheme.textMedium,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Send photo?',
-                      style: TextStyle(
-                        color: AppTheme.textDark,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            color: AppTheme.textDark,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                        if (widget.subtitle != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.subtitle!,
+                            style: const TextStyle(
+                                color: AppTheme.textLight, fontSize: 12),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context, false),
-                    child: const Icon(Icons.close, color: AppTheme.textMedium, size: 22),
+                    child: const Icon(Icons.close,
+                        color: AppTheme.textMedium, size: 22),
                   ),
                 ],
               ),
@@ -487,18 +864,17 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                   ? const SizedBox(
                       height: 200,
                       child: Center(
-                          child: CircularProgressIndicator(color: Colors.white)),
+                          child:
+                              CircularProgressIndicator(color: Colors.white)),
                     )
-                  : Image.memory(
-                      _bytes!,
-                      fit: BoxFit.contain,
-                    ),
+                  : Image.memory(_bytes!, fit: BoxFit.contain),
             ),
 
             // Action buttons
             Container(
               color: AppTheme.surface,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
                   Expanded(
@@ -519,7 +895,12 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
+                        gradient: widget.isSnap
+                            ? const LinearGradient(colors: [
+                                Colors.deepOrange,
+                                Colors.orange
+                              ])
+                            : AppTheme.primaryGradient,
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: ElevatedButton.icon(
@@ -531,12 +912,19 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
                               borderRadius: BorderRadius.circular(24)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        icon: const Icon(Icons.send_rounded,
-                            color: Colors.white, size: 18),
-                        label: const Text('Send',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700)),
+                        icon: Icon(
+                          widget.isSnap
+                              ? Icons.camera_alt_rounded
+                              : Icons.send_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        label: Text(
+                          widget.sendLabel,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ),
                   ),
@@ -550,7 +938,7 @@ class _ImagePreviewDialogState extends State<_ImagePreviewDialog> {
   }
 }
 
-// Three-dot animated typing indicator
+// ── Three-dot animated typing indicator ──────────────────────────────────────
 class _TypingDots extends StatefulWidget {
   @override
   State<_TypingDots> createState() => _TypingDotsState();
@@ -585,8 +973,8 @@ class _TypingDotsState extends State<_TypingDots>
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (i) {
             final phase = (_anim.value - i * 0.2).clamp(0.0, 1.0);
-            final opacity = (phase < 0.5 ? phase * 2 : (1 - phase) * 2)
-                .clamp(0.3, 1.0);
+            final opacity =
+                (phase < 0.5 ? phase * 2 : (1 - phase) * 2).clamp(0.3, 1.0);
             return Container(
               width: 5,
               height: 5,

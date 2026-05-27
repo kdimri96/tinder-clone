@@ -21,7 +21,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  int _newLikesCount = 0;
 
   // ID of the last match for which we showed the "you matched!" snackbar.
   // Using ID instead of reference avoids false-positives after API reloads
@@ -61,10 +60,21 @@ class _HomeScreenState extends State<HomeScreen> {
     if (newMatch != null && newMatch.id != _lastShownMatchId) {
       _lastShownMatchId = newMatch.id;
       final other = newMatch.otherUser;
+      final myId = context.read<AuthProvider>().user?.id ?? '';
       if (other != null) {
-        AppNotification.primary(
+        final isSuperLikeReceived =
+            newMatch.isSuperLike && newMatch.superLikeBy != myId;
+        AppNotification.show(
           context,
-          'You matched with ${other.name}!',
+          message: isSuperLikeReceived
+              ? '${other.name} Super Liked you! You can now chat.'
+              : 'You matched with ${other.name}!',
+          backgroundColor: isSuperLikeReceived
+              ? AppTheme.superLike
+              : AppTheme.primary,
+          textColor: Colors.white,
+          icon: isSuperLikeReceived ? Icons.star_rounded : Icons.favorite,
+          iconColor: Colors.white,
           actionLabel: 'Chat',
           onAction: () {
             setState(() => _currentIndex = 1);
@@ -78,7 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onLikedYou() {
     if (!mounted) return;
-    setState(() => _newLikesCount++);
     // Suppress banner if user is already on the Likes tab
     if (_currentIndex == 2) return;
     AppNotification.show(
@@ -113,11 +122,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onTabTap(int index) {
-    setState(() {
-      _currentIndex = index;
-      if (index == 1) context.read<MatchProvider>().clearNewNotifications();
-      if (index == 2) _newLikesCount = 0;
-    });
+    setState(() => _currentIndex = index);
+    if (index == 1) {
+      context.read<MatchProvider>().clearNewNotifications();
+      // Silently sync in case any events arrived while on another tab
+      context.read<MatchProvider>().silentRefresh();
+    }
+    if (index == 2) context.read<MatchProvider>().clearNewLikes();
   }
 
   @override
@@ -125,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<MatchProvider>(
       builder: (context, matchProvider, _) {
         final matchBadge = matchProvider.newNotificationsCount;
+        final likesBadge = matchProvider.newLikesCount;
 
         return Scaffold(
           body: IndexedStack(
@@ -166,15 +178,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: 'Matches',
                 ),
                 BottomNavigationBarItem(
-                  icon: _newLikesCount > 0
+                  icon: likesBadge > 0
                       ? Badge(
-                          label: Text('$_newLikesCount'),
+                          label: Text('$likesBadge'),
                           child: const Icon(Icons.star_border_rounded),
                         )
                       : const Icon(Icons.star_border_rounded),
-                  activeIcon: _newLikesCount > 0
+                  activeIcon: likesBadge > 0
                       ? Badge(
-                          label: Text('$_newLikesCount'),
+                          label: Text('$likesBadge'),
                           child: const Icon(Icons.star_rounded),
                         )
                       : const Icon(Icons.star_rounded),
