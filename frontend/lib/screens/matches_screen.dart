@@ -6,6 +6,7 @@ import '../providers/match_provider.dart';
 import '../models/match_model.dart';
 import '../widgets/network_image_widget.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_colors.dart';
 
 class MatchesScreen extends StatelessWidget {
   const MatchesScreen({Key? key}) : super(key: key);
@@ -13,14 +14,14 @@ class MatchesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: AppTheme.background,
+        backgroundColor: AppColors.of(context).background,
         title: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
+          shaderCallback: (bounds) => LinearGradient(
             colors: [AppTheme.primary, AppTheme.secondary],
           ).createShader(bounds),
-          child: const Text(
+          child: Text(
             'Matches',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 20),
           ),
@@ -28,7 +29,7 @@ class MatchesScreen extends StatelessWidget {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppTheme.textMedium),
+            icon: Icon(Icons.refresh, color: AppColors.of(context).textMedium),
             onPressed: () => context.read<MatchProvider>().loadMatches(),
           ),
         ],
@@ -50,7 +51,7 @@ class MatchesScreen extends StatelessWidget {
               .toList();
 
           if (matchProvider.matches.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(context);
           }
 
           return RefreshIndicator(
@@ -88,11 +89,11 @@ class MatchesScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Icon(Icons.chat_bubble_outline,
-                            size: 48, color: AppTheme.textLight.withOpacity(0.5)),
+                            size: 48, color: AppColors.of(context).textLight.withOpacity(0.5)),
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           'Say hello to your matches!',
-                          style: TextStyle(color: AppTheme.textMedium, fontSize: 14),
+                          style: TextStyle(color: AppColors.of(context).textMedium, fontSize: 14),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -106,7 +107,7 @@ class MatchesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -127,17 +128,17 @@ class MatchesScreen extends StatelessWidget {
                 size: 44, color: AppTheme.primary.withOpacity(0.6)),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'No matches yet',
             style: TextStyle(
                 fontSize: 18,
-                color: AppTheme.textDark,
+                color: AppColors.of(context).textDark,
                 fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Start swiping to find your matches!',
-            style: TextStyle(color: AppTheme.textMedium),
+            style: TextStyle(color: AppColors.of(context).textMedium),
           ),
         ],
       ),
@@ -158,8 +159,8 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppTheme.textDark,
+            style: TextStyle(
+              color: AppColors.of(context).textDark,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -213,7 +214,7 @@ class _NewMatchAvatar extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: isSuperLike
-                        ? const LinearGradient(
+                        ? LinearGradient(
                             colors: [Color(0xFF38BDF8), Color(0xFF0EA5E9)],
                           )
                         : AppTheme.primaryGradient,
@@ -228,8 +229,8 @@ class _NewMatchAvatar extends StatelessWidget {
                             fit: BoxFit.cover,
                           )
                         : Container(
-                            color: AppTheme.surface2,
-                            child: const Icon(Icons.person, size: 32, color: AppTheme.textMedium),
+                            color: AppColors.of(context).surface2,
+                            child: Icon(Icons.person, size: 32, color: AppColors.of(context).textMedium),
                           ),
                   ),
                 ),
@@ -274,7 +275,7 @@ class _NewMatchAvatar extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppTheme.success,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.background, width: 2),
+                        border: Border.all(color: AppColors.of(context).background, width: 2),
                       ),
                     ),
                   ),
@@ -284,7 +285,7 @@ class _NewMatchAvatar extends StatelessWidget {
             Text(
               other.name,
               style: TextStyle(
-                color: isSuperLike ? AppTheme.superLike : AppTheme.textDark,
+                color: isSuperLike ? AppTheme.superLike : AppColors.of(context).textDark,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -314,7 +315,7 @@ class _ConversationTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         border: isUnread
             ? Border.all(color: AppTheme.primary.withOpacity(0.4), width: 1)
@@ -336,8 +337,8 @@ class _ConversationTile extends StatelessWidget {
                   : Container(
                       width: 56,
                       height: 56,
-                      color: AppTheme.surface2,
-                      child: const Icon(Icons.person, size: 32, color: AppTheme.textMedium),
+                      color: AppColors.of(context).surface2,
+                      child: Icon(Icons.person, size: 32, color: AppColors.of(context).textMedium),
                     ),
             ),
             if (other.isOnline)
@@ -350,7 +351,7 @@ class _ConversationTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppTheme.success,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppTheme.surface, width: 2),
+                    border: Border.all(color: AppColors.of(context).surface, width: 2),
                   ),
                 ),
               ),
@@ -369,7 +370,7 @@ class _ConversationTile extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600,
                   fontSize: 15,
-                  color: match.isSuperLike ? AppTheme.superLike : AppTheme.textDark,
+                  color: match.isSuperLike ? AppTheme.superLike : AppColors.of(context).textDark,
                 ),
               ),
             ),
@@ -377,7 +378,7 @@ class _ConversationTile extends StatelessWidget {
               Container(
                 width: 10,
                 height: 10,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: AppTheme.primaryGradient,
                   shape: BoxShape.circle,
                 ),
@@ -391,7 +392,7 @@ class _ConversationTile extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: isUnread ? AppTheme.textDark : AppTheme.textMedium,
+            color: isUnread ? AppColors.of(context).textDark : AppColors.of(context).textMedium,
             fontStyle: match.lastMessage != null ? FontStyle.normal : FontStyle.italic,
             fontWeight: isUnread ? FontWeight.w600 : FontWeight.normal,
             fontSize: 13,
@@ -401,7 +402,7 @@ class _ConversationTile extends StatelessWidget {
             ? Text(
                 timeago.format(match.lastMessageAt!),
                 style: TextStyle(
-                  color: isUnread ? AppTheme.primary : AppTheme.textLight,
+                  color: isUnread ? AppTheme.primary : AppColors.of(context).textLight,
                   fontSize: 11,
                   fontWeight: isUnread ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -421,15 +422,15 @@ class _ConversationTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface,
+        backgroundColor: AppColors.of(context).surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Unmatch', style: TextStyle(color: AppTheme.textDark)),
+        title: Text('Unmatch', style: TextStyle(color: AppColors.of(context).textDark)),
         content: Text('Are you sure you want to unmatch with $name?',
-            style: const TextStyle(color: AppTheme.textMedium)),
+            style: TextStyle(color: AppColors.of(context).textMedium)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.textMedium)),
+            child: Text('Cancel', style: TextStyle(color: AppColors.of(context).textMedium)),
           ),
           TextButton(
             onPressed: () {

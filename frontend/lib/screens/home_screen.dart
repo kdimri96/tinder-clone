@@ -11,6 +11,7 @@ import 'discovery_screen.dart';
 import 'matches_screen.dart';
 import 'liked_you_screen.dart';
 import 'profile_screen.dart';
+import '../utils/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -93,8 +94,8 @@ class _HomeScreenState extends State<HomeScreen> {
     AppNotification.show(
       context,
       message: 'Someone liked your profile!',
-      backgroundColor: AppTheme.surface,
-      textColor: AppTheme.textDark,
+      backgroundColor: AppColors.of(context).surface,
+      textColor: AppColors.of(context).textDark,
       icon: Icons.star_rounded,
       iconColor: const Color(0xFFFFAA00),
       actionLabel: 'View',
@@ -112,8 +113,8 @@ class _HomeScreenState extends State<HomeScreen> {
     AppNotification.show(
       context,
       message: '$senderName: $text',
-      backgroundColor: AppTheme.surface,
-      textColor: AppTheme.textDark,
+      backgroundColor: AppColors.of(context).surface,
+      textColor: AppColors.of(context).textDark,
       icon: Icons.chat_bubble_outline,
       iconColor: AppTheme.primary,
       actionLabel: 'Reply',
@@ -144,17 +145,17 @@ class _HomeScreenState extends State<HomeScreen> {
             children: _screens,
           ),
           bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: AppTheme.surface,
+            decoration: BoxDecoration(
+              color: AppColors.of(context).surface,
               border:
-                  Border(top: BorderSide(color: AppTheme.surface2, width: 0.5)),
+                  Border(top: BorderSide(color: AppColors.of(context).surface2, width: 0.5)),
             ),
             child: BottomNavigationBar(
               currentIndex: _currentIndex,
               onTap: _onTabTap,
-              backgroundColor: AppTheme.surface,
+              backgroundColor: AppColors.of(context).surface,
               selectedItemColor: AppTheme.primary,
-              unselectedItemColor: AppTheme.textLight,
+              unselectedItemColor: AppColors.of(context).textLight,
               type: BottomNavigationBarType.fixed,
               items: [
                 const BottomNavigationBarItem(

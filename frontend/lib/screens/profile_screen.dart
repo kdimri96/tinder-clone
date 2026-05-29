@@ -7,6 +7,7 @@ import '../models/user_model.dart';
 import '../widgets/network_image_widget.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
+import '../utils/app_colors.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -102,13 +103,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (user == null) return const SizedBox();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
         title: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
+          shaderCallback: (bounds) => LinearGradient(
             colors: [AppTheme.primary, AppTheme.secondary],
           ).createShader(bounds),
-          child: const Text('Profile',
+          child: Text('Profile',
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
         ),
         actions: [
@@ -119,11 +120,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))
-                : const Text('Save',
+                : Text('Save',
                     style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w700)),
           ),
           IconButton(
-            icon: const Icon(Icons.logout, color: AppTheme.textMedium),
+            icon: Icon(Icons.logout, color: AppColors.of(context).textMedium),
             onPressed: () async {
               await context.read<AuthProvider>().logout();
               if (mounted) Navigator.pushReplacementNamed(context, '/welcome');
@@ -154,8 +155,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedGender,
-              dropdownColor: AppTheme.surface,
-              style: const TextStyle(color: AppTheme.textDark, fontSize: 15),
+              dropdownColor: AppColors.of(context).surface,
+              style: TextStyle(color: AppColors.of(context).textDark, fontSize: 15),
               decoration: _inputDecoration('Gender', Icons.person_outline),
               items: const [
                 DropdownMenuItem(value: 'male', child: Text('Male')),
@@ -206,17 +207,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     decoration: BoxDecoration(
                       color: selected
                           ? AppTheme.primary.withOpacity(0.15)
-                          : AppTheme.surface,
+                          : AppColors.of(context).surface,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: selected ? AppTheme.primary : AppTheme.surface2,
+                        color: selected ? AppTheme.primary : AppColors.of(context).surface2,
                         width: selected ? 1.5 : 1,
                       ),
                     ),
                     child: Text(
                       interest,
                       style: TextStyle(
-                        color: selected ? AppTheme.primary : AppTheme.textMedium,
+                        color: selected ? AppTheme.primary : AppColors.of(context).textMedium,
                         fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                         fontSize: 13,
                       ),
@@ -247,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       maxLength: maxLength,
       keyboardType: keyboardType,
       validator: validator,
-      style: const TextStyle(color: AppTheme.textDark, fontSize: 15),
+      style: TextStyle(color: AppColors.of(context).textDark, fontSize: 15),
       decoration: _inputDecoration(label, icon),
     );
   }
@@ -255,17 +256,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: AppTheme.textMedium),
-      prefixIcon: Icon(icon, color: AppTheme.textMedium, size: 20),
+      labelStyle: TextStyle(color: AppColors.of(context).textMedium),
+      prefixIcon: Icon(icon, color: AppColors.of(context).textMedium, size: 20),
       filled: true,
-      fillColor: AppTheme.surface,
+      fillColor: AppColors.of(context).surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppTheme.surface2),
+        borderSide: BorderSide(color: AppColors.of(context).surface2),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppTheme.surface2),
+        borderSide: BorderSide(color: AppColors.of(context).surface2),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -306,11 +307,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Container(
                     width: 24,
                     height: 24,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Colors.black54,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close, size: 14, color: Colors.white),
+                    child: Icon(Icons.close, size: 14, color: Colors.white),
                   ),
                 ),
               ),
@@ -321,11 +322,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onTap: _pickAndUploadPhoto,
           child: Container(
             decoration: BoxDecoration(
-              color: AppTheme.surface,
+              color: AppColors.of(context).surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.surface2),
+              border: Border.all(color: AppColors.of(context).surface2),
             ),
-            child: const Icon(Icons.add, color: AppTheme.primary, size: 32),
+            child: Icon(Icons.add, color: AppTheme.primary, size: 32),
           ),
         );
       },
@@ -341,10 +342,10 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 17,
         fontWeight: FontWeight.w700,
-        color: AppTheme.textDark,
+        color: AppColors.of(context).textDark,
       ),
     );
   }

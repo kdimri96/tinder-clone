@@ -5,7 +5,7 @@ const { parseError } = require('../utils/errorHandler');
 
 const swipe = async (req, res) => {
   try {
-    const { targetId, direction } = req.body;
+    const { targetId, direction, comment = '' } = req.body;
     const swiperId = req.userId;
 
     if (!targetId) {
@@ -25,7 +25,7 @@ const swipe = async (req, res) => {
 
     await Swipe.findOneAndUpdate(
       { swiperId, targetId },
-      { direction },
+      { direction, comment },
       { upsert: true, new: true }
     );
 
@@ -80,6 +80,21 @@ const swipe = async (req, res) => {
       // so the swiper can navigate to chat — no new notification needed
       else {
         match = await existingMatch.populate('users', 'name photos age');
+      }
+    }
+
+    // If a match was created AND the swiper included a comment, auto-seed the conversation
+    if (match && comment.trim()) {
+      const Message = require('../models/Message');
+      const message = await Message.create({
+        matchId: match._id,
+        senderId: swiperId,
+        text: comment.trim(),
+      });
+      if (io) {
+        const room = match._id.toString();
+        io.to(room).emit('chat:message', { message });
+        io.to(targetId).emit('chat:notification', { matchId: room });
       }
     }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
+import '../utils/app_colors.dart';
 
 /// Shows a slide-in notification banner at the TOP of the screen.
 /// Auto-dismisses after [duration] (default 5 s). Tap to dismiss early.
@@ -8,23 +9,26 @@ class AppNotification {
   static void show(
     BuildContext context, {
     required String message,
-    Color backgroundColor = AppTheme.surface,
-    Color textColor = AppTheme.textDark,
+    Color? backgroundColor,
+    Color? textColor,
     IconData? icon,
     Color? iconColor,
     String? actionLabel,
     VoidCallback? onAction,
     Duration duration = const Duration(seconds: 5),
   }) {
+    final colors = AppColors.of(context);
+    backgroundColor ??= colors.surface;
+    textColor ??= colors.textDark;
     final overlay = Overlay.of(context, rootOverlay: true);
     late OverlayEntry entry;
     entry = OverlayEntry(
       builder: (_) => _Toast(
         message: message,
-        backgroundColor: backgroundColor,
-        textColor: textColor,
+        backgroundColor: backgroundColor!,
+        textColor: textColor!,
         icon: icon,
-        iconColor: iconColor ?? textColor,
+        iconColor: iconColor ?? textColor!,
         actionLabel: actionLabel,
         onAction: onAction,
         duration: duration,
@@ -76,8 +80,8 @@ class AppNotification {
       show(
         context,
         message: message,
-        backgroundColor: AppTheme.surface,
-        textColor: AppTheme.textDark,
+        backgroundColor: AppColors.of(context).surface,
+        textColor: AppColors.of(context).textDark,
         icon: Icons.info_outline,
         iconColor: AppTheme.primary,
         actionLabel: actionLabel,

@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/premium_provider.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
+import '../utils/app_colors.dart';
 
 // Razorpay disabled during testing
 
@@ -47,10 +48,10 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.wifi_off, size: 64, color: AppTheme.textLight),
+                        Icon(Icons.wifi_off, size: 64, color: AppColors.of(context).textLight),
                         const SizedBox(height: 12),
                         Text('Could not load plans',
-                            style: TextStyle(color: AppTheme.textMedium)),
+                            style: TextStyle(color: AppColors.of(context).textMedium)),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: provider.fetchPlans,
@@ -181,7 +182,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
         'Payments are secure and processed by Razorpay. '
         'Plans auto-expire and do not renew automatically.',
         textAlign: TextAlign.center,
-        style: TextStyle(color: AppTheme.textLight, fontSize: 12, height: 1.5),
+        style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12, height: 1.5),
       ),
     );
   }
@@ -281,7 +282,7 @@ class _PlanCard extends StatelessWidget {
                         children: [
                           Text(
                             meta.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                             ),
@@ -290,7 +291,7 @@ class _PlanCard extends StatelessWidget {
                             meta.subtitle,
                             style: TextStyle(
                               fontSize: 13,
-                              color: AppTheme.textLight,
+                              color: AppColors.of(context).textLight,
                             ),
                           ),
                         ],
@@ -309,7 +310,7 @@ class _PlanCard extends StatelessWidget {
                         ),
                         Text(
                           plan.durationDays == 1 ? '1 day' : '${plan.durationDays} days',
-                          style: TextStyle(fontSize: 12, color: AppTheme.textLight),
+                          style: TextStyle(fontSize: 12, color: AppColors.of(context).textLight),
                         ),
                       ],
                     ),

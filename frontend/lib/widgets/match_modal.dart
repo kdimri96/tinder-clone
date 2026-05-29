@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import 'network_image_widget.dart';
+import '../utils/app_colors.dart';
 
 class MatchModal extends StatefulWidget {
   final UserModel currentUser;
@@ -190,8 +191,8 @@ class _MatchModalState extends State<MatchModal> with TickerProviderStateMixin {
         child: user.firstPhoto.isNotEmpty
             ? NetworkImageWidget(imageUrl: user.firstPhoto, fit: BoxFit.cover)
             : Container(
-                color: AppTheme.surface,
-                child: const Icon(Icons.person, size: 56, color: AppTheme.textMedium),
+                color: AppColors.of(context).surface,
+                child: Icon(Icons.person, size: 56, color: AppColors.of(context).textMedium),
               ),
       ),
     );

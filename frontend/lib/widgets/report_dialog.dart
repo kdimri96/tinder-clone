@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../providers/discovery_provider.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
+import '../utils/app_colors.dart';
 
 void showReportBottomSheet(BuildContext context, UserModel user) {
   showModalBottomSheet(
@@ -88,8 +89,8 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.surface,
+      decoration: BoxDecoration(
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + bottomPadding),
@@ -104,23 +105,23 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: AppTheme.surface2,
+                color: AppColors.of(context).surface2,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           Text(
             'Report ${widget.user.name}',
-            style: const TextStyle(
-              color: AppTheme.textDark,
+            style: TextStyle(
+              color: AppColors.of(context).textDark,
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Help us understand what\'s happening.',
-            style: TextStyle(color: AppTheme.textMedium, fontSize: 13),
+            style: TextStyle(color: AppColors.of(context).textMedium, fontSize: 13),
           ),
           const SizedBox(height: 16),
 
@@ -143,7 +144,7 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         child: Text(
                           label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
@@ -152,14 +153,14 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
                       )
                     : Container(
                         decoration: BoxDecoration(
-                          color: AppTheme.surface2,
+                          color: AppColors.of(context).surface2,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         child: Text(
                           label,
-                          style: const TextStyle(
-                            color: AppTheme.textMedium,
+                          style: TextStyle(
+                            color: AppColors.of(context).textMedium,
                             fontSize: 13,
                           ),
                         ),
@@ -174,12 +175,12 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
           TextField(
             controller: _detailsController,
             maxLines: 3,
-            style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
+            style: TextStyle(color: AppColors.of(context).textDark, fontSize: 14),
             decoration: InputDecoration(
               hintText: 'Additional details (optional)',
-              hintStyle: const TextStyle(color: AppTheme.textLight),
+              hintStyle: TextStyle(color: AppColors.of(context).textLight),
               filled: true,
-              fillColor: AppTheme.surface2,
+              fillColor: AppColors.of(context).surface2,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -225,7 +226,7 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
                       height: 22,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     )
-                  : const Text(
+                  : Text(
                       'Report & Block',
                       style: TextStyle(
                         color: Colors.white,
@@ -245,14 +246,14 @@ class _ReportBottomSheetState extends State<_ReportBottomSheet> {
             child: OutlinedButton(
               onPressed: _isSubmitting ? null : _blockOnly,
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.textMedium,
-                side: const BorderSide(color: AppTheme.surface2),
+                foregroundColor: AppColors.of(context).textMedium,
+                side: BorderSide(color: AppColors.of(context).surface2),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               ),
-              child: const Text(
+              child: Text(
                 'Just Block',
                 style: TextStyle(
-                  color: AppTheme.textMedium,
+                  color: AppColors.of(context).textMedium,
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),

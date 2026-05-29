@@ -16,6 +16,7 @@ const swipeSchema = new mongoose.Schema({
     enum: ['like', 'dislike', 'superlike'],
     required: true,
   },
+  comment: { type: String, default: '' },
 }, {
   timestamps: true,
 });

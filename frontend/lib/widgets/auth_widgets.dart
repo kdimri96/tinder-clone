@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
+import '../utils/app_colors.dart';
 
 class StyledField extends StatelessWidget {
   final TextEditingController controller;
@@ -30,10 +31,10 @@ class StyledField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textMedium,
+            color: AppColors.of(context).textMedium,
           ),
         ),
         const SizedBox(height: 8),
@@ -42,22 +43,22 @@ class StyledField extends StatelessWidget {
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
-          style: const TextStyle(fontSize: 15, color: AppTheme.textDark),
+          style: TextStyle(fontSize: 15, color: AppColors.of(context).textDark),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: AppTheme.textLight),
-            prefixIcon: Icon(icon, color: AppTheme.textMedium, size: 20),
+            hintStyle: TextStyle(color: AppColors.of(context).textLight),
+            prefixIcon: Icon(icon, color: AppColors.of(context).textMedium, size: 20),
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: AppTheme.surface,
+            fillColor: AppColors.of(context).surface,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppTheme.surface2),
+              borderSide: BorderSide(color: AppColors.of(context).surface2),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppTheme.surface2),
+              borderSide: BorderSide(color: AppColors.of(context).surface2),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -65,7 +66,7 @@ class StyledField extends StatelessWidget {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppTheme.error),
+              borderSide: BorderSide(color: AppTheme.error),
             ),
           ),
         ),
@@ -98,9 +99,9 @@ class CircleSocialButton extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppTheme.surface,
+              color: AppColors.of(context).surface,
               shape: BoxShape.circle,
-              border: Border.all(color: AppTheme.surface2, width: 1),
+              border: Border.all(color: AppColors.of(context).surface2, width: 1),
             ),
             child: isLoading
                 ? const Padding(
@@ -112,9 +113,9 @@ class CircleSocialButton extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppTheme.textMedium,
+              color: AppColors.of(context).textMedium,
               fontWeight: FontWeight.w500,
             ),
           ),

@@ -14,6 +14,7 @@ import '../widgets/network_image_widget.dart';
 import '../widgets/report_dialog.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
+import '../utils/app_colors.dart';
 
 class ChatScreen extends StatefulWidget {
   final String matchId;
@@ -142,7 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!kIsWeb) {
       final picked = await showModalBottomSheet<String>(
         context: context,
-        backgroundColor: AppTheme.surface,
+        backgroundColor: AppColors.of(context).surface,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -188,28 +189,28 @@ class _ChatScreenState extends State<ChatScreen> {
       confirmed = await showDialog<bool>(
             context: context,
             builder: (_) => AlertDialog(
-              backgroundColor: AppTheme.surface,
+              backgroundColor: AppColors.of(context).surface,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
-              title: const Row(children: [
+              title: Row(children: [
                 Icon(Icons.videocam_outlined, color: Colors.deepOrange),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text('Send video snap?',
                       style: TextStyle(
-                          color: AppTheme.textDark, fontSize: 16)),
+                          color: AppColors.of(context).textDark, fontSize: 16)),
                 ),
               ]),
-              content: const Text(
+              content: Text(
                 'Recipient can watch this video only once.',
                 style:
-                    TextStyle(color: AppTheme.textMedium, fontSize: 13),
+                    TextStyle(color: AppColors.of(context).textMedium, fontSize: 13),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel',
-                      style: TextStyle(color: AppTheme.textMedium)),
+                  child: Text('Cancel',
+                      style: TextStyle(color: AppColors.of(context).textMedium)),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, true),
@@ -330,9 +331,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final myId = context.read<AuthProvider>().user?.id ?? '';
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: AppTheme.surface,
+        backgroundColor: AppColors.of(context).surface,
         leadingWidth: 30,
         title: GestureDetector(
           onTap: () => Navigator.pushNamed(context, '/user-profile',
@@ -350,9 +351,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     : Container(
                         width: 40,
                         height: 40,
-                        color: AppTheme.surface2,
-                        child: const Icon(Icons.person,
-                            color: AppTheme.textMedium),
+                        color: AppColors.of(context).surface2,
+                        child: Icon(Icons.person,
+                            color: AppColors.of(context).textMedium),
                       ),
               ),
               const SizedBox(width: 10),
@@ -360,8 +361,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.otherUser.name,
-                      style: const TextStyle(
-                          fontSize: 16, color: AppTheme.textDark)),
+                      style: TextStyle(
+                          fontSize: 16, color: AppColors.of(context).textDark)),
                   Row(
                     children: [
                       Container(
@@ -371,7 +372,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           shape: BoxShape.circle,
                           color: _isOtherUserOnline
                               ? AppTheme.success
-                              : AppTheme.textLight,
+                              : AppColors.of(context).textLight,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -380,7 +381,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         style: TextStyle(
                           color: _isOtherUserOnline
                               ? AppTheme.success
-                              : AppTheme.textLight,
+                              : AppColors.of(context).textLight,
                           fontSize: 11,
                         ),
                       ),
@@ -393,8 +394,8 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: AppTheme.textMedium),
-            color: AppTheme.surface,
+            icon: Icon(Icons.more_vert, color: AppColors.of(context).textMedium),
+            color: AppColors.of(context).surface,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) {
@@ -406,7 +407,7 @@ class _ChatScreenState extends State<ChatScreen> {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'view_profile',
                 child: Row(
                   children: [
@@ -414,18 +415,18 @@ class _ChatScreenState extends State<ChatScreen> {
                         color: AppTheme.primary, size: 18),
                     SizedBox(width: 10),
                     Text('View Profile',
-                        style: TextStyle(color: AppTheme.textDark)),
+                        style: TextStyle(color: AppColors.of(context).textDark)),
                   ],
                 ),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'report',
                 child: Row(
                   children: [
                     Icon(Icons.flag_outlined, color: AppTheme.error, size: 18),
                     SizedBox(width: 10),
                     Text('Report / Block',
-                        style: TextStyle(color: AppTheme.textDark)),
+                        style: TextStyle(color: AppColors.of(context).textDark)),
                   ],
                 ),
               ),
@@ -454,27 +455,27 @@ class _ChatScreenState extends State<ChatScreen> {
                         Container(
                           width: 80,
                           height: 80,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
                               colors: [AppTheme.primary, AppTheme.secondary],
                             ),
                           ),
-                          child: const Icon(Icons.favorite,
+                          child: Icon(Icons.favorite,
                               color: Colors.white, size: 36),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           "You matched with ${widget.otherUser.name}!",
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.textDark),
+                              color: AppColors.of(context).textDark),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Say hello to start the conversation',
-                          style: TextStyle(color: AppTheme.textMedium),
+                          style: TextStyle(color: AppColors.of(context).textMedium),
                         ),
                       ],
                     ),
@@ -519,8 +520,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     const SizedBox(width: 8),
                     Text(
                       '${widget.otherUser.name} is typing',
-                      style: const TextStyle(
-                          color: AppTheme.textLight,
+                      style: TextStyle(
+                          color: AppColors.of(context).textLight,
                           fontSize: 13,
                           fontStyle: FontStyle.italic),
                     ),
@@ -548,9 +549,9 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                decoration: const BoxDecoration(
-                  color: AppTheme.surface,
-                  border: Border(top: BorderSide(color: AppTheme.surface2)),
+                decoration: BoxDecoration(
+                  color: AppColors.of(context).surface,
+                  border: Border(top: BorderSide(color: AppColors.of(context).surface2)),
                 ),
                 child: Row(
                   children: [
@@ -573,16 +574,16 @@ class _ChatScreenState extends State<ChatScreen> {
                         onChanged: _onTypingChanged,
                         maxLines: 4,
                         minLines: 1,
-                        style: const TextStyle(
-                            color: AppTheme.textDark, fontSize: 15),
+                        style: TextStyle(
+                            color: AppColors.of(context).textDark, fontSize: 15),
                         decoration: InputDecoration(
                           hintText: 'Type a message...',
                           hintStyle:
-                              const TextStyle(color: AppTheme.textLight),
+                              TextStyle(color: AppColors.of(context).textLight),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 10),
                           filled: true,
-                          fillColor: AppTheme.surface2,
+                          fillColor: AppColors.of(context).surface2,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -658,9 +659,9 @@ class _RecordingBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: const BoxDecoration(
-        color: AppTheme.surface,
-        border: Border(top: BorderSide(color: AppTheme.surface2)),
+      decoration: BoxDecoration(
+        color: AppColors.of(context).surface,
+        border: Border(top: BorderSide(color: AppColors.of(context).surface2)),
       ),
       child: Row(
         children: [
@@ -674,7 +675,7 @@ class _RecordingBar extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: AppTheme.error.withOpacity(0.1),
               ),
-              child: const Icon(Icons.delete_outline,
+              child: Icon(Icons.delete_outline,
                   color: AppTheme.error, size: 20),
             ),
           ),
@@ -684,8 +685,8 @@ class _RecordingBar extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             formatDuration(seconds),
-            style: const TextStyle(
-              color: AppTheme.textDark,
+            style: TextStyle(
+              color: AppColors.of(context).textDark,
               fontWeight: FontWeight.w600,
               fontSize: 16,
             ),
@@ -829,11 +830,11 @@ class _InputIconButton extends StatelessWidget {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(
-          color: AppTheme.surface2,
+        decoration: BoxDecoration(
+          color: AppColors.of(context).surface2,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: AppTheme.textMedium, size: 20),
+        child: Icon(icon, color: AppColors.of(context).textMedium, size: 20),
       ),
     );
   }
@@ -882,7 +883,7 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
           children: [
             // Header
             Container(
-              color: AppTheme.surface,
+              color: AppColors.of(context).surface,
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
@@ -891,7 +892,7 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
                     widget.isSnap
                         ? Icons.camera_alt_outlined
                         : Icons.image_outlined,
-                    color: widget.isSnap ? Colors.deepOrange : AppTheme.textMedium,
+                    color: widget.isSnap ? Colors.deepOrange : AppColors.of(context).textMedium,
                     size: 20,
                   ),
                   const SizedBox(width: 10),
@@ -901,8 +902,8 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
                       children: [
                         Text(
                           widget.title,
-                          style: const TextStyle(
-                            color: AppTheme.textDark,
+                          style: TextStyle(
+                            color: AppColors.of(context).textDark,
                             fontWeight: FontWeight.w700,
                             fontSize: 16,
                           ),
@@ -911,8 +912,8 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
                           const SizedBox(height: 2),
                           Text(
                             widget.subtitle!,
-                            style: const TextStyle(
-                                color: AppTheme.textLight, fontSize: 12),
+                            style: TextStyle(
+                                color: AppColors.of(context).textLight, fontSize: 12),
                           ),
                         ],
                       ],
@@ -920,8 +921,8 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context, false),
-                    child: const Icon(Icons.close,
-                        color: AppTheme.textMedium, size: 22),
+                    child: Icon(Icons.close,
+                        color: AppColors.of(context).textMedium, size: 22),
                   ),
                 ],
               ),
@@ -946,7 +947,7 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
 
             // Action buttons
             Container(
-              color: AppTheme.surface,
+              color: AppColors.of(context).surface,
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -955,8 +956,8 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context, false),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.textMedium,
-                        side: const BorderSide(color: AppTheme.surface2),
+                        foregroundColor: AppColors.of(context).textMedium,
+                        side: BorderSide(color: AppColors.of(context).surface2),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1027,22 +1028,22 @@ class _CameraChoiceSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppTheme.surface2,
+              color: AppColors.of(context).surface2,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Camera Snap',
             style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
-                color: AppTheme.textDark),
+                color: AppColors.of(context).textDark),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Recipient can only view once',
-            style: TextStyle(color: AppTheme.textLight, fontSize: 12),
+            style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12),
           ),
           const SizedBox(height: 8),
           ListTile(
@@ -1053,14 +1054,14 @@ class _CameraChoiceSheet extends StatelessWidget {
                 color: Colors.deepOrange.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.camera_alt_outlined,
+              child: Icon(Icons.camera_alt_outlined,
                   color: Colors.deepOrange, size: 20),
             ),
-            title: const Text('Take Photo',
+            title: Text('Take Photo',
                 style: TextStyle(
-                    color: AppTheme.textDark, fontWeight: FontWeight.w600)),
-            subtitle: const Text('One-time view photo',
-                style: TextStyle(color: AppTheme.textLight, fontSize: 12)),
+                    color: AppColors.of(context).textDark, fontWeight: FontWeight.w600)),
+            subtitle: Text('One-time view photo',
+                style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12)),
             onTap: () => Navigator.pop(context, 'photo'),
           ),
           ListTile(
@@ -1071,14 +1072,14 @@ class _CameraChoiceSheet extends StatelessWidget {
                 color: Colors.deepOrange.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.videocam_outlined,
+              child: Icon(Icons.videocam_outlined,
                   color: Colors.deepOrange, size: 20),
             ),
-            title: const Text('Record Video',
+            title: Text('Record Video',
                 style: TextStyle(
-                    color: AppTheme.textDark, fontWeight: FontWeight.w600)),
-            subtitle: const Text('One-time view video (max 30s)',
-                style: TextStyle(color: AppTheme.textLight, fontSize: 12)),
+                    color: AppColors.of(context).textDark, fontWeight: FontWeight.w600)),
+            subtitle: Text('One-time view video (max 30s)',
+                style: TextStyle(color: AppColors.of(context).textLight, fontSize: 12)),
             onTap: () => Navigator.pop(context, 'video'),
           ),
           const SizedBox(height: 8),
@@ -1131,7 +1132,7 @@ class _TypingDotsState extends State<_TypingDots>
               margin: const EdgeInsets.symmetric(horizontal: 1.5),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.textLight.withOpacity(opacity),
+                color: AppColors.of(context).textLight.withOpacity(opacity),
               ),
             );
           }),

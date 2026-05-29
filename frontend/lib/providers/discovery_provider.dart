@@ -131,14 +131,14 @@ class DiscoveryProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> swipeRight(String targetId, {bool bypassLimit = false}) async {
+  Future<bool> swipeRight(String targetId, {bool bypassLimit = false, String? comment}) async {
     if (!bypassLimit && !hasLikesLeft) {
       _error = 'You have used all $_dailyLikeLimit likes for today. Come back tomorrow!';
       notifyListeners();
       return false;
     }
     try {
-      final result = await _api.swipe(targetId: targetId, direction: 'like');
+      final result = await _api.swipe(targetId: targetId, direction: 'like', comment: comment);
       await _incrementLikeCount();
       // Don't remove the user from the list here — CardSwiper manages its own
       // index. Removing while a swipe is in progress shifts indices and makes
@@ -169,14 +169,14 @@ class DiscoveryProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> superLike(String targetId) async {
+  Future<bool> superLike(String targetId, {String? comment}) async {
     if (!hasSuperLikesLeft) {
       _error = 'No Super Likes left today. Come back tomorrow!';
       notifyListeners();
       return false;
     }
     try {
-      final result = await _api.swipe(targetId: targetId, direction: 'superlike');
+      final result = await _api.swipe(targetId: targetId, direction: 'superlike', comment: comment);
       await _incrementSuperLikeCount();
       // Superlike always creates an instant match on the backend
       if (result['match'] != null) {

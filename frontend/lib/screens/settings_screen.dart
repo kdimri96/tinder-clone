@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../utils/api_error.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
+import '../utils/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -65,12 +66,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: AppTheme.background,
+        backgroundColor: AppColors.of(context).background,
         title: ShaderMask(
           shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
-          child: const Text(
+          child: Text(
             'Settings',
             style: TextStyle(
               color: Colors.white,
@@ -80,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppTheme.textDark),
+        iconTheme: IconThemeData(color: AppColors.of(context).textDark),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
@@ -97,11 +98,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: AppTheme.accent,
-                  inactiveTrackColor: AppTheme.surface2,
+                  inactiveTrackColor: AppColors.of(context).surface2,
                   thumbColor: AppTheme.accent,
                   overlayColor: AppTheme.accent.withOpacity(0.2),
                   valueIndicatorColor: AppTheme.accent,
-                  valueIndicatorTextStyle: const TextStyle(color: AppTheme.background),
+                  valueIndicatorTextStyle: TextStyle(color: AppColors.of(context).background),
                 ),
                 child: Slider(
                   value: _maxDistance,
@@ -123,7 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   activeTrackColor: AppTheme.primary,
-                  inactiveTrackColor: AppTheme.surface2,
+                  inactiveTrackColor: AppColors.of(context).surface2,
                   thumbColor: AppTheme.primary,
                   overlayColor: AppTheme.primary.withOpacity(0.2),
                   valueIndicatorColor: AppTheme.primary,
@@ -179,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                             child: Text(
                               label,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
@@ -188,15 +189,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           )
                         : Container(
                             decoration: BoxDecoration(
-                              color: AppTheme.surface2,
+                              color: AppColors.of(context).surface2,
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: AppTheme.surface2),
+                              border: Border.all(color: AppColors.of(context).surface2),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                             child: Text(
                               label,
-                              style: const TextStyle(
-                                color: AppTheme.textMedium,
+                              style: TextStyle(
+                                color: AppColors.of(context).textMedium,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 14,
                               ),
@@ -241,7 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         strokeWidth: 2.5,
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'Save Preferences',
                       style: TextStyle(
                         color: Colors.white,
@@ -269,9 +270,9 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.surface2.withOpacity(0.5)),
+        border: Border.all(color: AppColors.of(context).surface2.withOpacity(0.5)),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -279,8 +280,8 @@ class _SectionCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppTheme.textDark,
+            style: TextStyle(
+              color: AppColors.of(context).textDark,
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -304,11 +305,11 @@ class _SettingRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: AppTheme.textMedium, fontSize: 14)),
+        Text(label, style: TextStyle(color: AppColors.of(context).textMedium, fontSize: 14)),
         Text(
           value,
-          style: const TextStyle(
-            color: AppTheme.textDark,
+          style: TextStyle(
+            color: AppColors.of(context).textDark,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),

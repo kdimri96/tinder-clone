@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import '../widgets/network_image_widget.dart';
+import '../utils/app_colors.dart';
 
 /// Full-screen profile viewer for a matched user, opened from the chat screen.
 class UserProfileScreen extends StatefulWidget {
@@ -22,14 +23,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final photos = user.photos;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppColors.of(context).background,
       body: CustomScrollView(
         slivers: [
           // ── Photo header ────────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: MediaQuery.of(context).size.height * 0.55,
             pinned: true,
-            backgroundColor: AppTheme.surface,
+            backgroundColor: AppColors.of(context).surface,
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(6),
@@ -37,15 +38,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   color: Colors.black54,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 20),
               ),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: photos.isEmpty
                   ? Container(
-                      color: AppTheme.surface2,
-                      child: const Icon(Icons.person, size: 80, color: AppTheme.textLight),
+                      color: AppColors.of(context).surface2,
+                      child: Icon(Icons.person, size: 80, color: AppColors.of(context).textLight),
                     )
                   : Stack(
                       fit: StackFit.expand,
@@ -141,14 +142,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         height: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: user.isOnline ? AppTheme.success : AppTheme.textLight,
+                          color: user.isOnline ? AppTheme.success : AppColors.of(context).textLight,
                         ),
                       ),
                       const SizedBox(width: 6),
                       Text(
                         user.isOnline ? 'Active now' : 'Recently active',
                         style: TextStyle(
-                          color: user.isOnline ? AppTheme.success : AppTheme.textLight,
+                          color: user.isOnline ? AppTheme.success : AppColors.of(context).textLight,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -164,8 +165,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       title: 'About',
                       child: Text(
                         user.bio,
-                        style: const TextStyle(
-                          color: AppTheme.textDark,
+                        style: TextStyle(
+                          color: AppColors.of(context).textDark,
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -278,9 +279,9 @@ class _Section extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.surface2.withOpacity(0.5)),
+        border: Border.all(color: AppColors.of(context).surface2.withOpacity(0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,8 +292,8 @@ class _Section extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppTheme.textMedium,
+                style: TextStyle(
+                  color: AppColors.of(context).textMedium,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
@@ -320,12 +321,12 @@ class _DetailRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppTheme.textMedium),
+          Icon(icon, size: 16, color: AppColors.of(context).textMedium),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
+              style: TextStyle(color: AppColors.of(context).textDark, fontSize: 14),
             ),
           ),
         ],

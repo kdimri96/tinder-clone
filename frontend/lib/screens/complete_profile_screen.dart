@@ -7,6 +7,7 @@ import '../utils/api_error.dart';
 import '../utils/app_config.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
+import '../utils/app_colors.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({Key? key}) : super(key: key);
@@ -135,7 +136,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppColors.of(context).background,
       body: Column(
         children: [
           _buildHeader(),
@@ -231,7 +232,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               height: 4,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(2),
-                color: i <= _currentPage ? AppTheme.primary : AppTheme.surface2,
+                color: i <= _currentPage ? AppTheme.primary : AppColors.of(context).surface2,
               ),
             ),
           );
@@ -264,16 +265,16 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                   decoration: BoxDecoration(
                     gradient: selected
-                        ? const LinearGradient(
+                        ? LinearGradient(
                             colors: [AppTheme.primary, AppTheme.secondary],
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                           )
                         : null,
-                    color: selected ? null : AppTheme.surface,
+                    color: selected ? null : AppColors.of(context).surface,
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(
-                      color: selected ? AppTheme.primary : AppTheme.surface2,
+                      color: selected ? AppTheme.primary : AppColors.of(context).surface2,
                     ),
                     boxShadow: selected
                         ? [BoxShadow(
@@ -285,7 +286,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   child: Text(
                     g,
                     style: TextStyle(
-                      color: selected ? Colors.white : AppTheme.textMedium,
+                      color: selected ? Colors.white : AppColors.of(context).textMedium,
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                     ),
@@ -309,16 +310,16 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                   decoration: BoxDecoration(
                     gradient: selected
-                        ? const LinearGradient(
+                        ? LinearGradient(
                             colors: [AppTheme.primary, AppTheme.secondary],
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                           )
                         : null,
-                    color: selected ? null : AppTheme.surface,
+                    color: selected ? null : AppColors.of(context).surface,
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(
-                      color: selected ? AppTheme.primary : AppTheme.surface2,
+                      color: selected ? AppTheme.primary : AppColors.of(context).surface2,
                     ),
                     boxShadow: selected
                         ? [BoxShadow(
@@ -330,7 +331,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   child: Text(
                     option,
                     style: TextStyle(
-                      color: selected ? Colors.white : AppTheme.textMedium,
+                      color: selected ? Colors.white : AppColors.of(context).textMedium,
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                     ),
@@ -346,7 +347,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               _SectionLabel(label: 'Age Preference'),
               Text(
                 '${_agePreference.start.round()} – ${_agePreference.end.round()} yrs',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.primary,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
@@ -358,7 +359,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: AppTheme.primary,
-              inactiveTrackColor: AppTheme.surface2,
+              inactiveTrackColor: AppColors.of(context).surface2,
               thumbColor: AppTheme.primary,
               overlayColor: AppTheme.primary.withOpacity(0.2),
               valueIndicatorColor: AppTheme.primary,
@@ -407,8 +408,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    color: AppTheme.surface,
-                    border: Border.all(color: AppTheme.surface2),
+                    color: AppColors.of(context).surface,
+                    border: Border.all(color: AppColors.of(context).surface2),
                     image: hasPhoto
                         ? DecorationImage(
                             image: NetworkImage(
@@ -458,20 +459,20 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             controller: _bioController,
             maxLines: 3,
             maxLength: 500,
-            style: const TextStyle(fontSize: 15, color: AppTheme.textDark),
+            style: TextStyle(fontSize: 15, color: AppColors.of(context).textDark),
             decoration: InputDecoration(
               hintText: 'Tell others about yourself...',
-              hintStyle: const TextStyle(color: AppTheme.textLight),
+              hintStyle: TextStyle(color: AppColors.of(context).textLight),
               filled: true,
-              fillColor: AppTheme.surface,
+              fillColor: AppColors.of(context).surface,
               contentPadding: const EdgeInsets.all(16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppTheme.surface2),
+                borderSide: BorderSide(color: AppColors.of(context).surface2),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppTheme.surface2),
+                borderSide: BorderSide(color: AppColors.of(context).surface2),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -509,17 +510,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: selected ? AppTheme.primary.withOpacity(0.15) : AppTheme.surface,
+                    color: selected ? AppTheme.primary.withOpacity(0.15) : AppColors.of(context).surface,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: selected ? AppTheme.primary : AppTheme.surface2,
+                      color: selected ? AppTheme.primary : AppColors.of(context).surface2,
                       width: selected ? 1.5 : 1,
                     ),
                   ),
                   child: Text(
                     interest,
                     style: TextStyle(
-                      color: selected ? AppTheme.primary : AppTheme.textMedium,
+                      color: selected ? AppTheme.primary : AppColors.of(context).textMedium,
                       fontSize: 13,
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                     ),
@@ -538,9 +539,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     final isLastPage = _currentPage == 2;
     return Container(
       padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).padding.bottom + 12),
-      decoration: const BoxDecoration(
-        color: AppTheme.surface,
-        border: Border(top: BorderSide(color: AppTheme.surface2)),
+      decoration: BoxDecoration(
+        color: AppColors.of(context).surface,
+        border: Border(top: BorderSide(color: AppColors.of(context).surface2)),
       ),
       child: SizedBox(
         width: double.infinity,
@@ -573,7 +574,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(
                     isLastPage ? 'Finish & Find Matches' : 'Continue',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
                   ),
           ),
@@ -591,10 +592,10 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w700,
-        color: AppTheme.textMedium,
+        color: AppColors.of(context).textMedium,
         letterSpacing: 0.3,
       ),
     );
@@ -610,24 +611,24 @@ class _SimpleTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      style: const TextStyle(fontSize: 15, color: AppTheme.textDark),
+      style: TextStyle(fontSize: 15, color: AppColors.of(context).textDark),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppTheme.textLight),
+        hintStyle: TextStyle(color: AppColors.of(context).textLight),
         filled: true,
-        fillColor: AppTheme.surface,
+        fillColor: AppColors.of(context).surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppTheme.surface2),
+          borderSide: BorderSide(color: AppColors.of(context).surface2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppTheme.surface2),
+          borderSide: BorderSide(color: AppColors.of(context).surface2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+          borderSide: BorderSide(color: AppTheme.primary, width: 1.5),
         ),
       ),
     );
@@ -643,20 +644,20 @@ class _AgeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<int>(
       value: value,
-      dropdownColor: AppTheme.surface,
-      hint: const Text('Select your age', style: TextStyle(color: AppTheme.textLight)),
-      style: const TextStyle(color: AppTheme.textDark, fontSize: 15),
+      dropdownColor: AppColors.of(context).surface,
+      hint: Text('Select your age', style: TextStyle(color: AppColors.of(context).textLight)),
+      style: TextStyle(color: AppColors.of(context).textDark, fontSize: 15),
       decoration: InputDecoration(
         filled: true,
-        fillColor: AppTheme.surface,
+        fillColor: AppColors.of(context).surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppTheme.surface2),
+          borderSide: BorderSide(color: AppColors.of(context).surface2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppTheme.surface2),
+          borderSide: BorderSide(color: AppColors.of(context).surface2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

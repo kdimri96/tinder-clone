@@ -10,6 +10,7 @@ import '../providers/chat_provider.dart';
 import '../utils/app_config.dart';
 import '../utils/app_theme.dart';
 import '../widgets/network_image_widget.dart';
+import '../utils/app_colors.dart';
 
 bool _isVideoUrl(String url) {
   final lower = url.toLowerCase();
@@ -73,13 +74,13 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         gradient: isMine
-            ? const LinearGradient(
+            ? LinearGradient(
                 colors: [AppTheme.primary, AppTheme.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : null,
-        color: isMine ? null : AppTheme.surface2,
+        color: isMine ? null : AppColors.of(context).surface2,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(20),
           topRight: const Radius.circular(20),
@@ -90,7 +91,7 @@ class MessageBubble extends StatelessWidget {
       child: Text(
         message.text,
         style: TextStyle(
-          color: isMine ? Colors.white : AppTheme.textDark,
+          color: isMine ? Colors.white : AppColors.of(context).textDark,
           fontSize: 15,
         ),
       ),
@@ -105,7 +106,7 @@ class MessageBubble extends StatelessWidget {
       children: [
         Text(
           DateFormat.jm().format(message.createdAt.toLocal()),
-          style: const TextStyle(color: AppTheme.textLight, fontSize: 11),
+          style: TextStyle(color: AppColors.of(context).textLight, fontSize: 11),
         ),
         if (isMine) ...[
           const SizedBox(width: 4),
@@ -118,7 +119,7 @@ class MessageBubble extends StatelessWidget {
               style: TextStyle(
                 color: message.snapViewedBy.any((id) => id != myId)
                     ? AppTheme.error
-                    : AppTheme.textLight,
+                    : AppColors.of(context).textLight,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -129,7 +130,7 @@ class MessageBubble extends StatelessWidget {
               size: 14,
               color: message.readBy.length > 1
                   ? AppTheme.accent
-                  : AppTheme.textLight,
+                  : AppColors.of(context).textLight,
             ),
           ],
         ],
@@ -237,7 +238,7 @@ class _AudioBubbleState extends State<_AudioBubble> {
         : 0.0;
     final played = (_barCount * progressFraction).round();
 
-    final bg = widget.isMine ? AppTheme.primary : AppTheme.surface2;
+    final bg = widget.isMine ? AppTheme.primary : AppColors.of(context).surface2;
     final fg = widget.isMine ? Colors.white : AppTheme.primary;
     final fgDim = widget.isMine
         ? Colors.white.withOpacity(0.45)
@@ -407,7 +408,7 @@ class _SnapBubbleState extends State<_SnapBubble> {
             opened
                 ? (_isVideo ? 'Video Opened' : 'Snap Opened')
                 : (_isVideo ? 'Video Snap Sent' : 'Snap Sent'),
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w700,
               fontSize: 14,
@@ -425,10 +426,10 @@ class _SnapBubbleState extends State<_SnapBubble> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: opened
-              ? AppTheme.surface2
+              ? AppColors.of(context).surface2
               : const Color(0xFFFF6B6B).withOpacity(0.15),
           border: Border.all(
-            color: opened ? AppTheme.surface2 : const Color(0xFFFF6B6B),
+            color: opened ? AppColors.of(context).surface2 : Color(0xFFFF6B6B),
             width: 1.5,
           ),
           borderRadius: const BorderRadius.only(
@@ -453,7 +454,7 @@ class _SnapBubbleState extends State<_SnapBubble> {
                 opened
                     ? (_isVideo ? Icons.videocam_off_outlined : Icons.photo_outlined)
                     : (_isVideo ? Icons.play_circle_outline : Icons.local_fire_department_rounded),
-                color: opened ? AppTheme.textLight : const Color(0xFFFF6B6B),
+                color: opened ? AppColors.of(context).textLight : Color(0xFFFF6B6B),
                 size: 18,
               ),
             const SizedBox(width: 8),
@@ -462,7 +463,7 @@ class _SnapBubbleState extends State<_SnapBubble> {
                   ? (_isVideo ? 'Video Opened' : 'Snap Opened')
                   : (_isVideo ? 'Tap to play video' : 'Tap to view'),
               style: TextStyle(
-                color: opened ? AppTheme.textLight : const Color(0xFFFF6B6B),
+                color: opened ? AppColors.of(context).textLight : Color(0xFFFF6B6B),
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
               ),
@@ -631,7 +632,7 @@ class _PhotoBubble extends StatelessWidget {
           border: Border.all(
             color: isMine
                 ? AppTheme.primary.withOpacity(0.5)
-                : AppTheme.surface2,
+                : AppColors.of(context).surface2,
             width: 1.5,
           ),
         ),

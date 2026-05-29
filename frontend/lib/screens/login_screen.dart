@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
 import '../widgets/auth_widgets.dart';
+import '../utils/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -98,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppColors.of(context).background,
       body: Column(
         children: [
           _buildHeader(context),
@@ -215,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
           suffixIcon: IconButton(
             icon: Icon(
               _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: AppTheme.textMedium,
+              color: AppColors.of(context).textMedium,
             ),
             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
           ),
@@ -255,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: _isLoading
               ? const SizedBox(width: 22, height: 22,
                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text('Sign In',
+              : Text('Sign In',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
         ),
       ),
@@ -265,13 +266,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildSocialDivider() {
     return Row(
       children: [
-        const Expanded(child: Divider(color: AppTheme.surface2, thickness: 1)),
+        Expanded(child: Divider(color: AppColors.of(context).surface2, thickness: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text('or continue with',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
         ),
-        const Expanded(child: Divider(color: AppTheme.surface2, thickness: 1)),
+        Expanded(child: Divider(color: AppColors.of(context).surface2, thickness: 1)),
       ],
     );
   }
@@ -307,9 +308,9 @@ class _LoginScreenState extends State<LoginScreen> {
       child: GestureDetector(
         onTap: () => Navigator.pushReplacementNamed(context, '/register'),
         child: RichText(
-          text: const TextSpan(
+          text: TextSpan(
             text: "Don't have an account?  ",
-            style: TextStyle(color: AppTheme.textMedium, fontSize: 15),
+            style: TextStyle(color: AppColors.of(context).textMedium, fontSize: 15),
             children: [
               TextSpan(
                 text: 'Sign Up',

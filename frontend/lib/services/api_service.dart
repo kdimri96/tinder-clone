@@ -220,10 +220,12 @@ class ApiService {
   Future<Map<String, dynamic>> swipe({
     required String targetId,
     required String direction,
+    String? comment,
   }) async {
     final response = await _dio.post('/swipe', data: {
       'targetId': targetId,
       'direction': direction,
+      if (comment != null && comment.isNotEmpty) 'comment': comment,
     });
     return response.data;
   }

@@ -9,6 +9,7 @@ import '../widgets/network_image_widget.dart';
 import '../widgets/match_modal.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
+import '../utils/app_colors.dart';
 
 class LikedYouScreen extends StatefulWidget {
   const LikedYouScreen({Key? key}) : super(key: key);
@@ -91,12 +92,12 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: AppTheme.background,
+          backgroundColor: AppColors.of(context).background,
           appBar: AppBar(
-            backgroundColor: AppTheme.background,
+            backgroundColor: AppColors.of(context).background,
             title: ShaderMask(
               shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
-              child: const Text(
+              child: Text(
                 'Liked You',
                 style: TextStyle(
                   color: Colors.white,
@@ -106,7 +107,7 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
               ),
             ),
             centerTitle: true,
-            iconTheme: const IconThemeData(color: AppTheme.textDark),
+            iconTheme: IconThemeData(color: AppColors.of(context).textDark),
           ),
           body: _buildBody(),
         ),
@@ -141,7 +142,7 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
             const SizedBox(height: 16),
             Text(
               'Failed to load',
-              style: const TextStyle(color: AppTheme.textDark, fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AppColors.of(context).textDark, fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             TextButton(
@@ -221,7 +222,7 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
                       end: Alignment.bottomRight,
                     ),
                   ),
-                  child: const Icon(Icons.person, size: 60, color: Colors.white30),
+                  child: Icon(Icons.person, size: 60, color: Colors.white30),
                 ),
               ),
             );
@@ -233,9 +234,9 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 32),
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: AppTheme.surface,
+              color: AppColors.of(context).surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppTheme.surface2),
+              border: Border.all(color: AppColors.of(context).surface2),
               boxShadow: [
                 BoxShadow(
                   color: AppTheme.primary.withOpacity(0.2),
@@ -250,17 +251,17 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
                 Container(
                   width: 64,
                   height: 64,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: AppTheme.primaryGradient,
                   ),
-                  child: const Icon(Icons.favorite, color: Colors.white, size: 32),
+                  child: Icon(Icons.favorite, color: Colors.white, size: 32),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   count > 0 ? '$count ${count == 1 ? 'person' : 'people'} liked you!' : 'See Who Liked You',
-                  style: const TextStyle(
-                    color: AppTheme.textDark,
+                  style: TextStyle(
+                    color: AppColors.of(context).textDark,
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
@@ -271,8 +272,8 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
                       ? 'Upgrade to Gold to see who liked your profile and match with them.'
                       : 'Upgrade to Gold to see all the people who already liked your profile.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppTheme.textMedium,
+                  style: TextStyle(
+                    color: AppColors.of(context).textMedium,
                     fontSize: 14,
                     height: 1.5,
                   ),
@@ -331,25 +332,25 @@ class _LikedYouScreenState extends State<LikedYouScreen> {
           Container(
             width: 80,
             height: 80,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: AppTheme.primaryGradient,
             ),
-            child: const Icon(Icons.favorite_border, color: Colors.white, size: 36),
+            child: Icon(Icons.favorite_border, color: Colors.white, size: 36),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'No likes yet',
             style: TextStyle(
-              color: AppTheme.textDark,
+              color: AppColors.of(context).textDark,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Keep swiping to get more visibility!',
-            style: TextStyle(color: AppTheme.textMedium, fontSize: 14),
+            style: TextStyle(color: AppColors.of(context).textMedium, fontSize: 14),
           ),
         ],
       ),
@@ -390,8 +391,8 @@ class _LikedUserCard extends StatelessWidget {
                       fit: BoxFit.cover,
                     )
                   : Container(
-                      color: AppTheme.surface2,
-                      child: const Icon(Icons.person, size: 60, color: AppTheme.textLight),
+                      color: AppColors.of(context).surface2,
+                      child: Icon(Icons.person, size: 60, color: AppColors.of(context).textLight),
                     ),
 
               // Gradient overlay
