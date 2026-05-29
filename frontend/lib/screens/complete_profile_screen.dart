@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../utils/api_error.dart';
+import '../utils/app_config.dart';
 import '../utils/app_theme.dart';
 import '../utils/app_notification.dart';
 
@@ -410,7 +411,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     border: Border.all(color: AppTheme.surface2),
                     image: hasPhoto
                         ? DecorationImage(
-                            image: NetworkImage(_uploadedPhotos[i]),
+                            image: NetworkImage(
+                              _uploadedPhotos[i].startsWith('http')
+                                  ? _uploadedPhotos[i]
+                                  : '${AppConfig.mediaBaseUrl}${_uploadedPhotos[i]}',
+                            ),
                             fit: BoxFit.cover,
                           )
                         : null,
