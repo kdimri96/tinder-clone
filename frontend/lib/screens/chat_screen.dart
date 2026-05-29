@@ -137,25 +137,99 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendSnap() async {
+    // Show camera choice (photo vs video), except on web where only photo works
+    String choice = 'photo';
+    if (!kIsWeb) {
+      final picked = await showModalBottomSheet<String>(
+        context: context,
+        backgroundColor: AppTheme.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => const _CameraChoiceSheet(),
+      );
+      if (picked == null || !mounted) return;
+      choice = picked;
+    }
+
     final picker = ImagePicker();
-    final picked =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (picked == null || !mounted) return;
+    XFile? file;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => _MediaPreviewDialog(
-        file: picked,
-        title: 'Send as Snap?',
-        subtitle: 'Recipient can only view this once',
-        sendLabel: 'Send Snap',
-        isSnap: true,
-      ),
-    );
+    if (choice == 'photo') {
+      file = await picker.pickImage(
+          source: ImageSource.camera, imageQuality: 85);
+    } else {
+      file = await picker.pickVideo(
+          source: ImageSource.camera,
+          maxDuration: const Duration(seconds: 30));
+    }
 
-    if (confirmed != true || !mounted) return;
-    await context.read<ChatProvider>().sendSnap(widget.matchId, picked);
+    if (file == null || !mounted) return;
+    await _confirmAndSendSnap(file, isVideo: choice == 'video');
+  }
+
+  Future<void> _confirmAndSendSnap(XFile file, {required bool isVideo}) async {
+    bool confirmed = false;
+
+    if (!isVideo) {
+      confirmed = await showDialog<bool>(
+            context: context,
+            barrierDismissible: true,
+            builder: (_) => _MediaPreviewDialog(
+              file: file,
+              title: 'Send as Snap?',
+              subtitle: 'Recipient can only view this once',
+              sendLabel: 'Send Snap',
+              isSnap: true,
+            ),
+          ) ??
+          false;
+    } else {
+      confirmed = await showDialog<bool>(
+            context: context,
+            builder: (_) => AlertDialog(
+              backgroundColor: AppTheme.surface,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: const Row(children: [
+                Icon(Icons.videocam_outlined, color: Colors.deepOrange),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Send video snap?',
+                      style: TextStyle(
+                          color: AppTheme.textDark, fontSize: 16)),
+                ),
+              ]),
+              content: const Text(
+                'Recipient can watch this video only once.',
+                style:
+                    TextStyle(color: AppTheme.textMedium, fontSize: 13),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel',
+                      style: TextStyle(color: AppTheme.textMedium)),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepOrange,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Send',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+    }
+
+    if (!confirmed || !mounted) return;
+
+    await context.read<ChatProvider>().sendSnap(widget.matchId, file);
     if (mounted) {
       final err = context.read<ChatProvider>().error;
       if (err != null) {
@@ -933,6 +1007,82 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Camera choice bottom sheet ────────────────────────────────────────────────
+class _CameraChoiceSheet extends StatelessWidget {
+  const _CameraChoiceSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.surface2,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Camera Snap',
+            style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                color: AppTheme.textDark),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Recipient can only view once',
+            style: TextStyle(color: AppTheme.textLight, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.deepOrange.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.camera_alt_outlined,
+                  color: Colors.deepOrange, size: 20),
+            ),
+            title: const Text('Take Photo',
+                style: TextStyle(
+                    color: AppTheme.textDark, fontWeight: FontWeight.w600)),
+            subtitle: const Text('One-time view photo',
+                style: TextStyle(color: AppTheme.textLight, fontSize: 12)),
+            onTap: () => Navigator.pop(context, 'photo'),
+          ),
+          ListTile(
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.deepOrange.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.videocam_outlined,
+                  color: Colors.deepOrange, size: 20),
+            ),
+            title: const Text('Record Video',
+                style: TextStyle(
+                    color: AppTheme.textDark, fontWeight: FontWeight.w600)),
+            subtitle: const Text('One-time view video (max 30s)',
+                style: TextStyle(color: AppTheme.textLight, fontSize: 12)),
+            onTap: () => Navigator.pop(context, 'video'),
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

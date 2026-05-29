@@ -35,6 +35,8 @@ class AuthProvider extends ChangeNotifier {
       _socket.connect(token);
       notifyListeners();
     } catch (_) {
+      // Clear stale/invalid tokens so they don't leak into subsequent requests
+      await _api.logout();
       _status = AuthStatus.unauthenticated;
       notifyListeners();
     }

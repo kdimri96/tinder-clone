@@ -290,11 +290,13 @@ class ApiService {
 
   Future<MessageModel> sendSnapMessage(String matchId, XFile file) async {
     final bytes = await file.readAsBytes();
+    final mime = _mimeType(file);
+    final fallback = mime.startsWith('video/') ? 'snap.mp4' : 'snap.jpg';
     final formData = FormData.fromMap({
       'snap': MultipartFile.fromBytes(
         bytes,
-        filename: _safeFilename(file.name, 'snap.jpg'),
-        contentType: MediaType.parse(_mimeType(file)),
+        filename: _safeFilename(file.name, fallback),
+        contentType: MediaType.parse(mime),
       ),
     });
     final response = await _dio.post('/messages/$matchId/snap', data: formData);
@@ -314,6 +316,8 @@ class ApiService {
     const map = {
       'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
       'png': 'image/png', 'webp': 'image/webp', 'gif': 'image/gif',
+      'mp4': 'video/mp4', 'mov': 'video/quicktime',
+      'webm': 'video/webm', 'm4v': 'video/x-m4v', 'avi': 'video/x-msvideo',
     };
     return map[ext] ?? 'image/jpeg';
   }

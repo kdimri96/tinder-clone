@@ -18,7 +18,8 @@ const fileFilter = (req, file, cb) => {
     'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/m4a',
     'audio/x-m4a', 'audio/aac', 'audio/webm', 'audio/ogg',
     'audio/wav', 'audio/x-wav',
-    'video/webm', 'video/mp4',
+    'video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v',
+    'video/x-msvideo', 'video/avi', 'video/mov',
   ];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -31,7 +32,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024,
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 50 * 1024 * 1024,
   },
 });
 

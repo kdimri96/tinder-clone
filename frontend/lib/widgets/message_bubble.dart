@@ -3,12 +3,20 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 import '../models/message_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../utils/app_config.dart';
 import '../utils/app_theme.dart';
 import '../widgets/network_image_widget.dart';
+
+bool _isVideoUrl(String url) {
+  final lower = url.toLowerCase();
+  return lower.endsWith('.mp4') || lower.endsWith('.mov') ||
+      lower.endsWith('.webm') || lower.endsWith('.m4v') ||
+      lower.endsWith('.avi');
+}
 
 class MessageBubble extends StatelessWidget {
   final MessageModel message;
@@ -366,6 +374,8 @@ class _SnapBubbleState extends State<_SnapBubble> {
     return _snapReceiverBubble(context, opened);
   }
 
+  bool get _isVideo => _isVideoUrl(widget.message.mediaUrl ?? '');
+
   Widget _snapSenderBubble(bool opened) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -386,13 +396,17 @@ class _SnapBubbleState extends State<_SnapBubble> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            opened ? Icons.photo_outlined : Icons.local_fire_department_rounded,
+            opened
+                ? (_isVideo ? Icons.videocam_off_outlined : Icons.photo_outlined)
+                : (_isVideo ? Icons.videocam_outlined : Icons.local_fire_department_rounded),
             color: Colors.white,
             size: 18,
           ),
           const SizedBox(width: 8),
           Text(
-            opened ? 'Snap Opened' : 'Snap Sent',
+            opened
+                ? (_isVideo ? 'Video Opened' : 'Snap Opened')
+                : (_isVideo ? 'Video Snap Sent' : 'Snap Sent'),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w700,
@@ -410,7 +424,9 @@ class _SnapBubbleState extends State<_SnapBubble> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: opened ? AppTheme.surface2 : const Color(0xFFFF6B6B).withOpacity(0.15),
+          color: opened
+              ? AppTheme.surface2
+              : const Color(0xFFFF6B6B).withOpacity(0.15),
           border: Border.all(
             color: opened ? AppTheme.surface2 : const Color(0xFFFF6B6B),
             width: 1.5,
@@ -429,17 +445,22 @@ class _SnapBubbleState extends State<_SnapBubble> {
               const SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF6B6B)),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Color(0xFFFF6B6B)),
               )
             else
               Icon(
-                opened ? Icons.photo_outlined : Icons.local_fire_department_rounded,
+                opened
+                    ? (_isVideo ? Icons.videocam_off_outlined : Icons.photo_outlined)
+                    : (_isVideo ? Icons.play_circle_outline : Icons.local_fire_department_rounded),
                 color: opened ? AppTheme.textLight : const Color(0xFFFF6B6B),
                 size: 18,
               ),
             const SizedBox(width: 8),
             Text(
-              opened ? 'Snap Opened' : 'Tap to view',
+              opened
+                  ? (_isVideo ? 'Video Opened' : 'Snap Opened')
+                  : (_isVideo ? 'Tap to play video' : 'Tap to view'),
               style: TextStyle(
                 color: opened ? AppTheme.textLight : const Color(0xFFFF6B6B),
                 fontWeight: FontWeight.w700,
@@ -462,13 +483,50 @@ class _SnapViewDialog extends StatefulWidget {
 }
 
 class _SnapViewDialogState extends State<_SnapViewDialog> {
+  VideoPlayerController? _videoCtrl;
+  bool _videoReady = false;
+  late final bool _isVideo;
+
   @override
   void initState() {
     super.initState();
-    // Auto-close after 10 seconds
-    Future.delayed(const Duration(seconds: 10), () {
-      if (mounted) Navigator.of(context).pop();
-    });
+    _isVideo = _isVideoUrl(widget.imageUrl);
+
+    if (_isVideo) {
+      _videoCtrl =
+          VideoPlayerController.networkUrl(Uri.parse(widget.imageUrl))
+            ..initialize().then((_) {
+              if (!mounted) return;
+              setState(() => _videoReady = true);
+              _videoCtrl!.play();
+              // Auto-close when video finishes
+              _videoCtrl!.addListener(_onVideoProgress);
+              // Hard cap at 35s
+              Future.delayed(const Duration(seconds: 35), _close);
+            });
+    } else {
+      // Photo: auto-close after 10s
+      Future.delayed(const Duration(seconds: 10), _close);
+    }
+  }
+
+  void _onVideoProgress() {
+    final ctrl = _videoCtrl;
+    if (ctrl == null) return;
+    final pos = ctrl.value.position;
+    final dur = ctrl.value.duration;
+    if (dur.inMilliseconds > 0 && pos >= dur) _close();
+  }
+
+  void _close() {
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  void dispose() {
+    _videoCtrl?.removeListener(_onVideoProgress);
+    _videoCtrl?.dispose();
+    super.dispose();
   }
 
   @override
@@ -478,19 +536,36 @@ class _SnapViewDialogState extends State<_SnapViewDialog> {
       insetPadding: EdgeInsets.zero,
       child: Stack(
         children: [
+          // Media content
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: _close,
             child: SizedBox(
               width: double.infinity,
               height: double.infinity,
-              child: NetworkImageWidget(imageUrl: widget.imageUrl, fit: BoxFit.contain),
+              child: _isVideo
+                  ? (_videoReady && _videoCtrl != null
+                      ? FittedBox(
+                          fit: BoxFit.contain,
+                          child: SizedBox(
+                            width: _videoCtrl!.value.size.width,
+                            height: _videoCtrl!.value.size.height,
+                            child: VideoPlayer(_videoCtrl!),
+                          ),
+                        )
+                      : const Center(
+                          child: CircularProgressIndicator(
+                              color: Colors.white)))
+                  : NetworkImageWidget(
+                      imageUrl: widget.imageUrl, fit: BoxFit.contain),
             ),
           ),
+
+          // Close button
           Positioned(
-            top: 40,
+            top: 48,
             right: 16,
             child: GestureDetector(
-              onTap: () => Navigator.pop(context),
+              onTap: _close,
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -501,20 +576,25 @@ class _SnapViewDialogState extends State<_SnapViewDialog> {
               ),
             ),
           ),
+
+          // Hint
           Positioned(
             bottom: 40,
             left: 0,
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'Tap to close • Disappears after 10s',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                child: Text(
+                  _isVideo
+                      ? 'Tap to close • Disappears after viewing'
+                      : 'Tap to close • Disappears after 10s',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ),
             ),
